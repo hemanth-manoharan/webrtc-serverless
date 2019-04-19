@@ -166,12 +166,25 @@ function onDataChannelCreated(channel) {
   console.log('onDataChannelCreated:', channel);
   channel.onopen = function() {
     console.log('Channel opened.');
+
+    // Load from Web Storage
+    if (!getItemInStore('chatMessages')) {
+      setItemInStore('chatMessages', JSON.stringify(['Start']));
+    }
+
+    let messages = JSON.parse(getItemInStore('chatMessages'));
+    console.log('Messages from store:' + messages);
+
+    messages.forEach(function(item) {
+      $('#messagesTrail').append($('<li>').text(item));
+    });
   };
   channel.onclose = function () {
     console.log('Channel closed.');
   }
   channel.onmessage = function(event) {
     console.log('Received message:' + event.data);
+    appendValueToArrayInStore('chatMessages', event.data);
     $('#messagesTrail').append($('<li>').text(event.data));
   }
 }
@@ -189,11 +202,11 @@ function sendDataMessage() {
   }
 
   let msgToSend = $('#message').val();
-
+  appendValueToArrayInStore('chatMessages', 'Me: ' + msgToSend);
   $('#messagesTrail').append($('<li>').text('Me: ' + msgToSend));
   console.log('Sending message:' + msgToSend);
   dataChannel.send(msgToSend);
-
+  
   $('#message').val('');
 }
 
