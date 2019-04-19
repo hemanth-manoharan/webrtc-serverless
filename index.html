@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Realtime chat with WebRTC</title>
+    <title>Realtime chat with PeerJS</title>
     <link rel="stylesheet" href="/css/main.css" />
   </head>
 
   <body>
-    <h1>Realtime chat with WebRTC</h1>
+    <h1>Realtime chat with PeerJS</h1>
 
     <ul id="messagesTrail"></ul>
-    <form action="">
+    <div>
+      <input id="peerId" autocomplete="off" /><button id="peerConnectButton">Connect</button>
       <input id="message" autocomplete="off" /><button id="sendButton">Send</button>
-    </form>
+    </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
-    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.0.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@0.3.20/dist/peer.min.js"></script>
     <script src="js/localStorageUtil.js"></script>
     <script src="js/main.js"></script>
   </body>
