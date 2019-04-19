@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Realtime chat with WebRTC</title>
+    <link rel="stylesheet" href="/css/main.css" />
+  </head>
+
+  <body>
+    <h1>Realtime chat with WebRTC</h1>
+
+    <ul id="messagesTrail"></ul>
+    <form action="">
+      <input id="message" autocomplete="off" /><button id="sendButton">Send</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+
+</html>
