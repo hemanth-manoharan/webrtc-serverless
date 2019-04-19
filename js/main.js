@@ -1,228 +1,62 @@
 'use strict';
 
-/****************************************************************************
-* Initialization
-****************************************************************************/
+// TBD - Not working due to CORS policy violation
+// let peer = new Peer(id, {host: 'localhost', port: 9000, path: '/webrtc'});
 
-var configuration = null;
+// This remote PeerJS cloud server works.
+let peer = new Peer({key: 'lwjd5qra8257b9'});
 
-// Create a random room if not already present in the URL.
-var isInitiator;
-var room = window.location.hash.substring(1);
-if (!room) {
-  room = window.location.hash = randomToken();
-}
-
-/****************************************************************************
-* Signaling server
-****************************************************************************/
-
-// Connect to the signaling server
-var socket = io.connect();
-
-socket.on('ipaddr', function(ipaddr) {
-  console.log('Server IP address is: ' + ipaddr);
+peer.on('open', function(id) {
+  console.log('Peer received open event ...');
+  console.log('My peer ID is: ' + id);
 });
 
-socket.on('created', function(room, clientId) {
-  console.log('Created room', room, '- my client ID is', clientId);
-  isInitiator = true;
+peer.on('connection', function(conn) {
+  console.log('Peer received connection event ...');
+  setupConnection(conn);
 });
 
-socket.on('joined', function(room, clientId) {
-  console.log('This peer has joined room', room, 'with client ID', clientId);
-  isInitiator = false;
-  if (!dataChannel || dataChannel.readyState === 'closed') {
-    createPeerConnection(isInitiator, configuration);
-  }
+$('#peerConnectButton').click(function() {
+  console.log('Connecting to peer ...' + $('#peerId').val());
+  var conn = peer.connect($('#peerId').val());
+  setupConnection(conn);
 });
 
-socket.on('full', function(room) {
-  alert('Room ' + room + ' is full. We will create a new room for you.');
-  window.location.hash = '';
-  window.location.reload();
-});
+function setupConnection(conn) {
+  console.log('Setting up connection');
 
-socket.on('ready', function() {
-  console.log('Socket is ready');
-  if (!dataChannel || dataChannel.readyState === 'closed') {
-    createPeerConnection(isInitiator, configuration);
-  }
-});
+  initMessageHistory();
 
-socket.on('log', function(array) {
-  console.log.apply(console, array);
-});
-
-socket.on('message', function(message) {
-  console.log('Client received message:', message);
-  signalingMessageCallback(message);
-});
-
-// Joining a room.
-socket.emit('create or join', room);
-
-if (location.hostname.match(/localhost|127\.0\.0/)) {
-  socket.emit('ipaddr');
-}
-
-// Leaving rooms and disconnecting from peers.
-socket.on('disconnect', function(reason) {
-  console.log(`Disconnected: ${reason}.`);
-});
-
-socket.on('bye', function(room) {
-  console.log(`Peer leaving room ${room}.`);
-  // If peer did not create the room, re-enter to be creator.
-  if (!isInitiator) {
-    window.location.reload();
-  }
-});
-
-window.addEventListener('unload', function() {
-  console.log(`Unloading window. Notifying peers in ${room}.`);
-  socket.emit('bye', room);
-});
-
-
-// Send message to signaling server
-function sendSignalingMessage(room, message) {
-  console.log('Client sending message: ', message);
-  socket.emit('message', room, message);
-}
-
-/****************************************************************************
-* WebRTC peer connection and data channel
-****************************************************************************/
-
-var peerConn;
-var dataChannel;
-
-function signalingMessageCallback(message) {
-  if (!message) {
-    console.log('Message is null. Aborting ...');
-  }
-  if (message.type === 'offer') {
-    console.log('Got offer. Sending answer to peer.');
-    peerConn.setRemoteDescription(new RTCSessionDescription(message), function() {},
-                                  logError);
-    peerConn.createAnswer(onLocalSessionCreated, logError);
-  } else if (message.type === 'answer') {
-    console.log('Got answer.');
-    peerConn.setRemoteDescription(new RTCSessionDescription(message), function() {},
-                                  logError);
-  } else if (message.type === 'candidate') {
-    peerConn.addIceCandidate(new RTCIceCandidate({
-      candidate: message.candidate
-    }));
-  }
-}
-
-function createPeerConnection(isInitiator, config) {
-  console.log('Creating Peer connection as initiator?', isInitiator, 'config:',
-              config);
-  peerConn = new RTCPeerConnection(config);
-
-  // send any ice candidates to the other peer
-  peerConn.onicecandidate = function(event) {
-    console.log('icecandidate event:', event);
-    if (event.candidate) {
-      sendSignalingMessage(room, {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate
-      });
-    } else {
-      console.log('End of candidates.');
-    }
-  };
-
-  if (isInitiator) {
-    console.log('Creating Data Channel');
-    dataChannel = peerConn.createDataChannel('messages');
-    onDataChannelCreated(dataChannel);
-
-    console.log('Creating an offer');
-    peerConn.createOffer(onLocalSessionCreated, logError);
-  } else {
-    peerConn.ondatachannel = function(event) {
-      console.log('ondatachannel:', event.channel);
-      dataChannel = event.channel;
-      onDataChannelCreated(dataChannel);
-    };
-  }
-}
-
-function onLocalSessionCreated(desc) {
-  console.log('local session created:', desc);
-  peerConn.setLocalDescription(desc, function() {
-    console.log('sending local desc:', peerConn.localDescription);
-    sendSignalingMessage(room, peerConn.localDescription);
-  }, logError);
-}
-
-function onDataChannelCreated(channel) {
-  console.log('onDataChannelCreated:', channel);
-  channel.onopen = function() {
-    console.log('Channel opened.');
-
-    // Load from Web Storage
-    if (!getItemInStore('chatMessages')) {
-      setItemInStore('chatMessages', JSON.stringify(['Start']));
-    }
-
-    let messages = JSON.parse(getItemInStore('chatMessages'));
-    console.log('Messages from store:' + messages);
-
-    messages.forEach(function(item) {
-      $('#messagesTrail').append($('<li>').text(item));
+  conn.on('open', function() {
+    // Receive messages
+    conn.on('data', function(data) {
+      console.log('Received message:' + data);
+      appendValueToArrayInStore('chatMessages', data);
+      $('#messagesTrail').append($('<li>').text(data));
     });
-  };
-  channel.onclose = function () {
-    console.log('Channel closed.');
-  }
-  channel.onmessage = function(event) {
-    console.log('Received message:' + event.data);
-    appendValueToArrayInStore('chatMessages', event.data);
-    $('#messagesTrail').append($('<li>').text(event.data));
-  }
-}
-
-$('#sendButton').click(sendDataMessage);
-
-function sendDataMessage() {
-  if (!dataChannel) {
-    logError('Connection has not been initiated. ' +
-      'Get two peers in the same room first');
-    return;
-  } else if (dataChannel.readyState === 'closed') {
-    logError('Connection was lost. Peer closed the connection.');
-    return;
-  }
-
-  let msgToSend = $('#message').val();
-  appendValueToArrayInStore('chatMessages', 'Me: ' + msgToSend);
-  $('#messagesTrail').append($('<li>').text('Me: ' + msgToSend));
-  console.log('Sending message:' + msgToSend);
-  dataChannel.send(msgToSend);
   
-  $('#message').val('');
+    $('#sendButton').click(function() {
+      // Send messages
+      let msgToSend = $('#message').val();
+      appendValueToArrayInStore('chatMessages', 'Me: ' + msgToSend);
+      $('#messagesTrail').append($('<li>').text('Me: ' + msgToSend));
+      console.log('Sending message:' + msgToSend);
+      conn.send(msgToSend);
+      $('#message').val('');
+    });
+  });
 }
 
-/****************************************************************************
-* Misc Utils
-****************************************************************************/
-
-function randomToken() {
-  return Math.floor((1 + Math.random()) * 1e16).toString(16).substring(1);
-}
-
-function logError(err) {
-  if (!err) return;
-  if (typeof err === 'string') {
-    console.warn(err);
-  } else {
-    console.warn(err.toString(), err);
+function initMessageHistory() {
+  // Load from Web Storage
+  if (!getItemInStore('chatMessages')) {
+    setItemInStore('chatMessages', JSON.stringify(['Start']));
   }
+
+  let messages = JSON.parse(getItemInStore('chatMessages'));
+  console.log('Messages from store:' + messages);
+
+  messages.forEach(function(item) {
+    $('#messagesTrail').append($('<li>').text(item));
+  });
 }
