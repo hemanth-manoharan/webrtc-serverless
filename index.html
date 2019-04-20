@@ -7,14 +7,17 @@
 
   <body>
     <h1>Realtime chat with PeerJS</h1>
-    <h3>Peer Id</h3>
-    <div id="selfPeerId"></div>
 
-    <ul id="messagesTrail"></ul>
-    <div id="buttonPanel">
+    <h3>Peer Id - <div id="selfPeerId"></div></h3>
+    
+    <div class="buttonPanel">
       <div class="textLabel">Enter peer id to connect to:</div><input id="peerId" autocomplete="off" /><button id="peerConnectButton">Connect</button>
       <div class="textLabel">Type message to send to peer:</div><input id="message" autocomplete="off" /><button id="sendButton">Send</button>
     </div>
+    Status: <div id="status"></div>
+
+    <h3>Chat History</h3>
+    <ul id="messagesTrail"></ul>
 
     <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/peerjs@0.3.20/dist/peer.min.js"></script>

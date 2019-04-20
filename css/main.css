@@ -15,18 +15,18 @@ body {
   width: 100%;
 }
 
-#buttonPanel textLabel {
-  width: 35%;
+.buttonPanel .textLabel {
+  width: 30%;
 }
 
-#buttonPanel input {
+.buttonPanel input {
   padding: 10px;
   width: 50%;
   margin-right: .5%;
 }
 
-#buttonPanel button {
-  width: 15%;
+.buttonPanel button {
+  width: 14%;
   padding: 10px;
 }
 
@@ -42,4 +42,8 @@ body {
 
 #messagesTrail li:nth-child(odd) {
   background: #eee;
+}
+
+#status {
+  color: rgb(29, 168, 16);
 }
