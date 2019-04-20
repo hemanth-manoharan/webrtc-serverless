@@ -1,10 +1,10 @@
 'use strict';
 
-// TBD - Not working due to CORS policy violation
-// let peer = new Peer(id, {host: 'localhost', port: 9000, path: '/webrtc'});
+// github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
+let peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
 
 // This remote PeerJS cloud server works.
-let peer = new Peer({key: 'lwjd5qra8257b9'});
+// let peer = new Peer({key: 'lwjd5qra8257b9'});
 
 peer.on('open', function(id) {
   console.log('Peer received open event ...');
