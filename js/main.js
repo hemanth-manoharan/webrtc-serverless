@@ -31,14 +31,14 @@ function setupConnection(conn) {
     // Receive messages
     conn.on('data', function(data) {
       console.log('Received message:' + data);
-      appendValueToArrayInStore('chatMessages', data);
+      LocalStorageUtil.appendValueToArrayInStore('chatMessages', data);
       $('#messagesTrail').append($('<li>').text(data));
     });
   
     $('#sendButton').click(function() {
       // Send messages
       let msgToSend = $('#message').val();
-      appendValueToArrayInStore('chatMessages', 'Me: ' + msgToSend);
+      LocalStorageUtil.appendValueToArrayInStore('chatMessages', 'Me: ' + msgToSend);
       $('#messagesTrail').append($('<li>').text('Me: ' + msgToSend));
       console.log('Sending message:' + msgToSend);
       conn.send(msgToSend);
@@ -49,11 +49,11 @@ function setupConnection(conn) {
 
 function initMessageHistory() {
   // Load from Web Storage
-  if (!getItemInStore('chatMessages')) {
-    setItemInStore('chatMessages', JSON.stringify(['Start']));
+  if (!LocalStorageUtil.getItemInStore('chatMessages')) {
+    LocalStorageUtil.setItemInStore('chatMessages', JSON.stringify(['Start']));
   }
 
-  let messages = JSON.parse(getItemInStore('chatMessages'));
+  let messages = JSON.parse(LocalStorageUtil.getItemInStore('chatMessages'));
   console.log('Messages from store:' + messages);
 
   messages.forEach(function(item) {
