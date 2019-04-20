@@ -26,6 +26,8 @@ $('#peerConnectButton').click(function() {
 function setupConnection(conn) {
   console.log('Setting up connection');
 
+  $('#status').html('Connected to ' + conn.peer);
+
   initMessageHistory();
 
   conn.on('open', function() {
@@ -49,6 +51,9 @@ function setupConnection(conn) {
 }
 
 function initMessageHistory() {
+  // Clear older messages rendered
+  $('#messagesTrail').html('');
+
   // Load from Web Storage
   if (!LocalStorageUtil.getItemInStore('chatMessages')) {
     LocalStorageUtil.setItemInStore('chatMessages', JSON.stringify(['Start']));
