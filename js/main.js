@@ -9,7 +9,7 @@ let peer = new Peer({key: 'lwjd5qra8257b9'});
 peer.on('open', function(id) {
   console.log('Peer received open event ...');
   console.log('My peer ID is: ' + id);
-  $('#peerId').html(id);
+  $('#selfPeerId').html(id);
 });
 
 peer.on('connection', function(conn) {
