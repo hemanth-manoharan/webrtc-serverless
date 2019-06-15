@@ -1,3 +1,5 @@
+// Currently based on session storage for testing
+
 class LocalStorageUtil {
   static appendValueToArrayInStore(arrayKey, valToAppend) {
     let arrayObj = JSON.parse(LocalStorageUtil.getItemInStore(arrayKey));
@@ -46,6 +48,5 @@ class LocalStorageUtil {
 let isSessionStorageAvailable = false;
 
 if (LocalStorageUtil.storageAvailable('sessionStorage')) {
-  // Yippee! We can use localStorage awesomeness
   isSessionStorageAvailable = true;
 }
