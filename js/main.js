@@ -1,7 +1,8 @@
 'use strict';
 
 // github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
-let peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
+// let peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
+let peer = new Peer({host: 'safe-eyrie-39067.herokuapp.com', port: 443, path: '/peerjs'});
 
 // This remote PeerJS cloud server works.
 // let peer = new Peer({key: 'lwjd5qra8257b9'});
