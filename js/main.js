@@ -12,7 +12,7 @@ let rtcConn = null;
 peer.on('open', function(id) {
   console.log('Peer received open event ...');
   console.log('My peer ID is: ' + id);
-  $('#selfPeerId').html(id);
+  $('#selfPeerId').html('Peer Id - ' + id);
 });
 
 peer.on('connection', function(conn) {
