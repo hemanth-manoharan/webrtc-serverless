@@ -21,6 +21,11 @@
     <h3><div id="selfPeerId"></div></h3>
     <br>
 
+    <div id="userInfoPanel">
+      <div id="userId"></div>
+    </div>
+    <br>
+
     <div id="buttonPanel">
       <div class="textLabel">Enter peer id to connect to:</div><input id="peerId" autocomplete="off" /><button id="peerConnectButton">Connect</button>
     </div>
@@ -32,6 +37,7 @@
     <section id="chatApp">
       <header id="header">
           <h1>Chat</h1>
+          <button id="clearMessages">Clear All</button>
           <br>
       </header>
       <section id="messages">
@@ -46,6 +52,12 @@
     <script type="text/template" id="item-template">
       <div class="view">
         <label><%- title %></label>
+      </div>
+    </script>
+
+    <script type="text/template" id="user-info-template">
+      <div class="view">
+        <label>UserName: <%- userName %></label>
       </div>
     </script>
 
