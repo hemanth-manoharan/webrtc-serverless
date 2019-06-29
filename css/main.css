@@ -47,3 +47,8 @@ body {
 #status {
   color: rgb(29, 168, 16);
 }
+
+#chatApp ul {
+  list-style-type: none;
+  /* Hides bullet points from todo list */
+}
