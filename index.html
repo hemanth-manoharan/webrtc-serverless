@@ -15,23 +15,30 @@
   </head>
 
   <body>
-    <h1>Realtime chat with PeerJS</h1>
+    <h2>Realtime chat with PeerJS</h2>
+    <br>
 
-    <h3>Peer Id - <div id="selfPeerId"></div></h3>
-    
-    <div class="buttonPanel">
+    <h3><div id="selfPeerId"></div></h3>
+    <br>
+
+    <div id="buttonPanel">
       <div class="textLabel">Enter peer id to connect to:</div><input id="peerId" autocomplete="off" /><button id="peerConnectButton">Connect</button>
     </div>
-    Status: <div id="status"></div>
+    <br>
+
+    <div id="statusPanel">Status: <div id="status"></div></div>
+    <br>
 
     <section id="chatApp">
       <header id="header">
           <h1>Chat</h1>
+          <br>
       </header>
       <section id="messages">
         <ul id="messagesTrail"></ul>
       </section>
       <footer id="footer">
+        <br>
         <input id="message" placeholder="Type message ... ">
       </footer>
     </section>
