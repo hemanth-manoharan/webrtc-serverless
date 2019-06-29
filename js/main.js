@@ -92,6 +92,7 @@ app.MessageView = Backbone.View.extend({
   },
   initialize: function() {
     this.model.on('change', this.render, this);
+    this.model.on('destroy', this.remove, this);
   },
 });
 
@@ -106,7 +107,8 @@ app.ChatMessagesView = Backbone.View.extend({
     app.messageList.fetch(); // Loads list from local storage
   },
   events: {
-    'keypress #message': 'sendMessageOnEnter'
+    'keypress #message': 'sendMessageOnEnter',
+    'click #clearMessages': 'clearMessageHistory'
   },
   sendMessageOnEnter: function(e) {
     if (e.which !== 13 || !this.input.val().trim()) {
@@ -119,6 +121,12 @@ app.ChatMessagesView = Backbone.View.extend({
 
     app.messageList.create(this.newAttributes());
     this.input.val('');
+  },
+  clearMessageHistory: function(e) {
+    var length = app.messageList.length;
+    for (var i = 0; i < length; i++) {
+      app.messageList.at(0).destroy();
+    }
   },
   addOne: function(message) {
     var view = new app.MessageView({model: message});
