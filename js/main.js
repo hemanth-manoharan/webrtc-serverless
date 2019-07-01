@@ -37,6 +37,7 @@ function setupConnection(conn) {
 
   conn.on('open', function() {
     sendCommand(conn, 'userId', app.userInfoColl.at(0).toJSON().userName);
+
     // Receive messages
     conn.on('data', function(data) {
       console.log('Received message:' + data);
@@ -45,7 +46,9 @@ function setupConnection(conn) {
       } else {
         // Normal message
         app.messageList.create({
-          title: data
+          title: data,
+          userName: app.sessionInfoColl.at(0).toJSON().peerUserName,
+          timestamp: Date.now() // Timestamp at which message is received, not sent
         });
       }
     });
@@ -58,12 +61,16 @@ function sendCommand(conn, command, message) {
 }
 
 function isCommandMessage(data) {
-  // TODO
+  // TODO Very rudimentary command impl. for now
+  if (data.includes(':')) {
+    return (data.split(':')[0] === 'userId');
+  }
   return false;
 }
 
 function processCommand(data) {
-  // TODO
+  // TODO Very rudimentary impl. for now
+  app.sessionInfoColl.create({peerUserName: data.split(':')[1]});
 }
 
 // Backbone Related Code
@@ -72,7 +79,9 @@ var app = {}; // create app namespace
 
 app.Message = Backbone.Model.extend({
   defaults: {
-    title: ''
+    title: '',
+    userName: '',
+    timestamp: -1
   }
 });
 
@@ -140,7 +149,9 @@ app.ChatMessagesView = Backbone.View.extend({
   },
   newAttributes: function() {
     return {
-      title: 'Me: ' + this.input.val().trim()
+      title: this.input.val().trim(),
+      userName: app.userInfoColl.at(0).toJSON().userName,
+      timestamp: Date.now()
     }
   }
 });
@@ -148,7 +159,7 @@ app.ChatMessagesView = Backbone.View.extend({
 // User Info
 app.UserInfo = Backbone.Model.extend({
   defaults: {
-    userName: ''
+    userName: '',
   }
 });
 
@@ -185,6 +196,22 @@ if (app.userInfoColl.length == 0) {
     app.userInfoColl.create({userName: userNameVal});
   }
 }
+
+// Session Info
+app.SessionInfo = Backbone.Model.extend({
+  defaults: {
+    peerUserName: '',
+  }
+});
+
+app.SessionInfoCollection = Backbone.Collection.extend({
+  model: app.SessionInfo,
+  localStorage: new Store("backbone-session")
+});
+
+app.sessionInfoColl = new app.SessionInfoCollection();
+
+// TODO SessionInfoView
 
 // Initialize the app
 app.userInfoView = new app.UserInfoView();

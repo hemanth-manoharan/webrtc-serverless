@@ -51,7 +51,9 @@
 
     <script type="text/template" id="item-template">
       <div class="view">
-        <label><%- title %></label>
+        <label><b><%-userName %></b>
+          (<%- new Date(timestamp).toLocaleString() %>): 
+          <%- title %></label>
       </div>
     </script>
 
