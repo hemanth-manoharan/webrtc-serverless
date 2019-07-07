@@ -25,6 +25,12 @@ peer.on('connection', function(conn) {
 
 $('#peerConnectButton').click(function() {
   console.log('Connecting to peer ...' + $('#peerId').val());
+
+  if (rtcConn !== null) {
+    peer.destroy();
+    peer = new Peer({host: 'safe-eyrie-39067.herokuapp.com', port: 443, path: '/peerjs', secure: 'true'});
+  }
+
   var conn = peer.connect($('#peerId').val());
   rtcConn = conn;
   setupConnection(conn);
@@ -81,7 +87,12 @@ function processCommand(data) {
   switch(commandName) {
     case 'userId':
       let peerUserName = data.split(':')[1];
+
+      if (app.sessionInfoColl.length == 1) {
+        app.sessionInfoColl.at(0).destroy();
+      }
       app.sessionInfoColl.create({peerUserName: peerUserName});
+
       addToChatList(peerUserName);
       selectChat(peerUserName);
       break;
@@ -294,6 +305,7 @@ function selectChat(peerUserName) {
   if (app.messageListView !== undefined) {
     // TODO This switch is not working
     app.messageListView.collection = app.messageList;
+    app.messageListView.initialize();
   } else {
     app.messageListView = new app.MessageListView({collection: app.messageList});
   }
