@@ -2,9 +2,21 @@
 
 // PeerJS related code
 
+let peerJSMode = 'remote';
+
+// Default is remote
+let peerJSHost = 'safe-eyrie-39067.herokuapp.com';
+let peerJSPort = 443;
+
+if (peerJSMode === 'local') {
+  peerJSHost = 'localhost';
+  peerJSPort = 9000;
+}
+   
+
 // github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
 // let peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
-let peer = new Peer({host: 'safe-eyrie-39067.herokuapp.com', port: 443, path: '/peerjs', secure: 'true'});
+let peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: 'true'});
 
 // This remote PeerJS cloud server works.
 // let peer = new Peer({key: 'lwjd5qra8257b9'});
@@ -43,7 +55,7 @@ $('#peerConnectButton').click(function() {
   if (rtcConn !== null) {
     rtcConn.close();
     peer.destroy();
-    peer = new Peer({host: 'safe-eyrie-39067.herokuapp.com', port: 443, path: '/peerjs', secure: 'true'});
+    peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: 'true'});
     peer.on('open', updateSelfPeerId);
     setTimeout(connectNew, 3000);
   } else {
