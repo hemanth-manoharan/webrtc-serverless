@@ -19,6 +19,13 @@ function updateSelfPeerId(id) {
 
 peer.on('open', updateSelfPeerId);
 
+peer.on('close', function() { 
+  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
+});
+peer.on('disconnected', function() {
+  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
+});
+
 peer.on('connection', function(conn) {
   console.log('Peer received connection event ...');
 
@@ -74,6 +81,10 @@ function setupConnection(conn) {
           timestamp: Date.now() // Timestamp at which message is received, not sent
         });
       }
+    });
+
+    conn.on('close', function() {
+      $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
     });
   });
 }
