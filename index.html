@@ -34,14 +34,22 @@
     <div id="statusPanel">Status: <div id="status"></div></div>
     <br>
 
-    <section id="chatApp">
+    <section id="chats">
+      <h1>Chats</h1>
+      <button id="clearChats">Clear All</button>
+      <ul id="chatList"></ul>
+    </section>
+
+    <br>
+
+    <section id="chat">
       <header id="header">
-          <h1>Chat</h1>
+          <h1>Messages</h1>
           <button id="clearMessages">Clear All</button>
           <br>
       </header>
       <section id="messages">
-        <ul id="messagesTrail"></ul>
+        <ul id="messageList"></ul>
       </section>
       <footer id="footer">
         <br>
@@ -49,9 +57,17 @@
       </footer>
     </section>
 
-    <script type="text/template" id="item-template">
+    <script type="text/template" id="chat-template">
       <div class="view">
-        <label><%- title %></label>
+        <label><b><%- id %></b></label>
+      </div>
+    </script>
+
+    <script type="text/template" id="message-template">
+      <div class="view">
+        <label><b><%-userName %></b>
+          (<%- new Date(timestamp).toLocaleString() %>): 
+          <%- body %></label>
       </div>
     </script>
 

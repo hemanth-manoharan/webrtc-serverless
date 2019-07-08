@@ -8,16 +8,29 @@ body {
   font: 13px Helvetica, Arial;
 }
 
-#messagesTrail {
+#messageList {
   list-style-type: none;
     /* Hides bullet points from todo list */
 }
 
-#messagesTrail li {
+#messageList li {
   padding: 5px 10px;
 }
 
-#messagesTrail li:nth-child(odd) {
+#messageList li:nth-child(odd) {
+  background: #eee;
+}
+
+#chatList {
+  list-style-type: none;
+    /* Hides bullet points from todo list */
+}
+
+#chatList li {
+  padding: 5px 10px;
+}
+
+#chatList li:nth-child(odd) {
   background: #eee;
 }
 
