@@ -11,14 +11,21 @@ let peer = new Peer({host: 'safe-eyrie-39067.herokuapp.com', port: 443, path: '/
 
 let rtcConn = null;
 
-peer.on('open', function(id) {
+function updateSelfPeerId(id) {
   console.log('Peer received open event ...');
   console.log('My peer ID is: ' + id);
   $('#selfPeerId').html('Peer Id - ' + id);
-});
+}
+
+peer.on('open', updateSelfPeerId);
 
 peer.on('connection', function(conn) {
   console.log('Peer received connection event ...');
+
+  if (rtcConn !== null) {
+    rtcConn.close();
+  }
+
   rtcConn = conn;
   setupConnection(conn);
 });
@@ -27,14 +34,21 @@ $('#peerConnectButton').click(function() {
   console.log('Connecting to peer ...' + $('#peerId').val());
 
   if (rtcConn !== null) {
+    rtcConn.close();
     peer.destroy();
     peer = new Peer({host: 'safe-eyrie-39067.herokuapp.com', port: 443, path: '/peerjs', secure: 'true'});
+    peer.on('open', updateSelfPeerId);
+    setTimeout(connectNew, 3000);
+  } else {
+    connectNew();
   }
+});
 
+function connectNew() {
   var conn = peer.connect($('#peerId').val());
   rtcConn = conn;
   setupConnection(conn);
-});
+}
 
 function setupConnection(conn) {
   console.log('Setting up connection');
@@ -93,6 +107,8 @@ function processCommand(data) {
       }
       app.sessionInfoColl.create({peerUserName: peerUserName});
 
+      $('#status').html('Connected to ' + peerUserName);
+      
       addToChatList(peerUserName);
       selectChat(peerUserName);
       break;
