@@ -5,7 +5,7 @@
 let peerJSMode = 'remote';
 
 // Default is remote
-let peerJSHost = 'safe-eyrie-39067.herokuapp.com';
+let peerJSHost = 'glacial-temple-29018.herokuapp.com';
 let peerJSPort = 443;
 let peerJSSecure = 'true';
 
@@ -14,7 +14,7 @@ if (peerJSMode === 'local') {
   peerJSPort = 9000;
   peerJSSecure = 'false';
 }
-   
+
 
 // github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
 // let peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
