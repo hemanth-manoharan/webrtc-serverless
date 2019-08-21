@@ -1,145 +1,5 @@
 'use strict';
 
-// PeerJS related code
-
-let peerJSMode = 'remote';
-
-// Default is remote
-let peerJSHost = 'glacial-temple-29018.herokuapp.com';
-let peerJSPort = 443;
-let peerJSSecure = 'true';
-
-if (peerJSMode === 'local') {
-  peerJSHost = 'localhost';
-  peerJSPort = 9000;
-  peerJSSecure = 'false';
-}
-
-
-// github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
-// let peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
-let peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
-
-// This remote PeerJS cloud server works.
-// let peer = new Peer({key: 'lwjd5qra8257b9'});
-
-let rtcConn = null;
-
-function updateSelfPeerId(id) {
-  console.log('Peer received open event ...');
-  console.log('My peer ID is: ' + id);
-  $('#selfPeerId').html('Peer Id - ' + id);
-}
-
-peer.on('open', updateSelfPeerId);
-
-peer.on('close', function() { 
-  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
-});
-peer.on('disconnected', function() {
-  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
-});
-
-peer.on('connection', function(conn) {
-  console.log('Peer received connection event ...');
-
-  if (rtcConn !== null) {
-    rtcConn.close();
-  }
-
-  rtcConn = conn;
-  setupConnection(conn);
-});
-
-$('#peerConnectButton').click(function() {
-  console.log('Connecting to peer ...' + $('#peerId').val());
-
-  if (rtcConn !== null) {
-    rtcConn.close();
-    peer.destroy();
-    peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: 'true'});
-    peer.on('open', updateSelfPeerId);
-    setTimeout(connectNew, 3000);
-  } else {
-    connectNew();
-  }
-});
-
-function connectNew() {
-  var conn = peer.connect($('#peerId').val());
-  rtcConn = conn;
-  setupConnection(conn);
-}
-
-function setupConnection(conn) {
-  console.log('Setting up connection');
-
-  $('#status').html('Connected to ' + conn.peer);
-
-  conn.on('open', function() {
-    sendCommand(conn, 'userId', app.userInfoColl.at(0).toJSON().userName);
-
-    // Receive messages
-    conn.on('data', function(data) {
-      console.log('Received message:' + data);
-      if (isCommandMessage(data)) {
-        processCommand(data);
-      } else {
-        // Normal message
-        // Add it to the currently live messageList
-        // Assumes that the current WebRTC connection
-        // is for the current remote peer.
-        app.messageList.create({
-          body: data,
-          userName: app.sessionInfoColl.at(0).toJSON().peerUserName,
-          timestamp: Date.now() // Timestamp at which message is received, not sent
-        });
-      }
-    });
-
-    conn.on('close', function() {
-      $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
-    });
-  });
-}
-
-function sendCommand(conn, command, message) {
-  // TODO Very rudimentary command impl. for now
-  conn.send(command + ':' + message);
-}
-
-function isCommandMessage(data) {
-  // TODO Very rudimentary command impl. for now
-  if (data.includes(':')) {
-    let commandName = data.split(':')[0];
-    switch(commandName) {
-      case 'userId':
-        return true;
-    }
-  }
-  return false;
-}
-
-function processCommand(data) {
-  // TODO Very rudimentary impl. for now
-  let commandName = data.split(':')[0];
-  switch(commandName) {
-    case 'userId':
-      let peerUserName = data.split(':')[1];
-
-      if (app.sessionInfoColl.length == 1) {
-        app.sessionInfoColl.at(0).destroy();
-      }
-      app.sessionInfoColl.create({peerUserName: peerUserName});
-
-      $('#status').html('Connected to ' + peerUserName);
-      
-      addToChatList(peerUserName);
-      selectChat(peerUserName);
-      break;
-  }
-}
-
 // Backbone Related Code
 
 var app = {}; // create app namespace
@@ -352,7 +212,7 @@ function selectChat(peerUserName) {
   }
 }
 
-/// End - Utility 
+/// End - Utility
 
 // Initialize the app
 
@@ -375,3 +235,151 @@ app.userInfoView.render();
 
 app.chatList = new app.ChatList();
 app.appView = new app.ChatListView({collection: app.chatList});
+
+// PeerJS related code
+
+let peerJSMode = 'remote';
+
+// Default is remote
+let peerJSHost = 'glacial-temple-29018.herokuapp.com';
+let peerJSPort = 443;
+let peerJSSecure = 'true';
+
+if (peerJSMode === 'local') {
+  peerJSHost = 'localhost';
+  peerJSPort = 9000;
+  peerJSSecure = 'false';
+}
+   
+
+// github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
+let peer = null;
+if (app.userInfoColl !== undefined) {
+  // peer = new Peer(app.userInfoColl.at(0).toJSON().userName,
+  //   {host: 'localhost', port: 9000, path: '/peerjs'});
+  peer = new Peer(app.userInfoColl.at(0).toJSON().userName,
+    {host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
+} else {
+  // peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
+  peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
+}
+
+// This remote PeerJS cloud server works.
+// let peer = new Peer({key: 'lwjd5qra8257b9'});
+
+let rtcConn = null;
+
+function updateSelfPeerId(id) {
+  console.log('Peer received open event ...');
+  console.log('My peer ID is: ' + id);
+  $('#selfPeerId').html('Peer Id - ' + id);
+}
+
+peer.on('open', updateSelfPeerId);
+
+peer.on('close', function() { 
+  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
+});
+peer.on('disconnected', function() {
+  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
+});
+
+peer.on('connection', function(conn) {
+  console.log('Peer received connection event ...');
+
+  if (rtcConn !== null) {
+    rtcConn.close();
+  }
+
+  rtcConn = conn;
+  setupConnection(conn);
+});
+
+$('#peerConnectButton').click(function() {
+  console.log('Connecting to peer ...' + $('#peerId').val());
+
+  if (rtcConn !== null) {
+    rtcConn.close();
+    peer.destroy();
+    peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: 'true'});
+    peer.on('open', updateSelfPeerId);
+    setTimeout(connectNew, 3000);
+  } else {
+    connectNew();
+  }
+});
+
+function connectNew() {
+  var conn = peer.connect($('#peerId').val());
+  rtcConn = conn;
+  setupConnection(conn);
+}
+
+function setupConnection(conn) {
+  console.log('Setting up connection');
+
+  $('#status').html('Connected to ' + conn.peer);
+
+  conn.on('open', function() {
+    sendCommand(conn, 'userId', app.userInfoColl.at(0).toJSON().userName);
+
+    // Receive messages
+    conn.on('data', function(data) {
+      console.log('Received message:' + data);
+      if (isCommandMessage(data)) {
+        processCommand(data);
+      } else {
+        // Normal message
+        // Add it to the currently live messageList
+        // Assumes that the current WebRTC connection
+        // is for the current remote peer.
+        app.messageList.create({
+          body: data,
+          userName: app.sessionInfoColl.at(0).toJSON().peerUserName,
+          timestamp: Date.now() // Timestamp at which message is received, not sent
+        });
+      }
+    });
+
+    conn.on('close', function() {
+      $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
+    });
+  });
+}
+
+function sendCommand(conn, command, message) {
+  // TODO Very rudimentary command impl. for now
+  conn.send(command + ':' + message);
+}
+
+function isCommandMessage(data) {
+  // TODO Very rudimentary command impl. for now
+  if (data.includes(':')) {
+    let commandName = data.split(':')[0];
+    switch(commandName) {
+      case 'userId':
+        return true;
+    }
+  }
+  return false;
+}
+
+function processCommand(data) {
+  // TODO Very rudimentary impl. for now
+  let commandName = data.split(':')[0];
+  switch(commandName) {
+    case 'userId':
+      let peerUserName = data.split(':')[1];
+
+      if (app.sessionInfoColl.length == 1) {
+        app.sessionInfoColl.at(0).destroy();
+      }
+      app.sessionInfoColl.create({peerUserName: peerUserName});
+
+      $('#status').html('Connected to ' + peerUserName);
+      
+      addToChatList(peerUserName);
+      selectChat(peerUserName);
+      break;
+  }
+}
