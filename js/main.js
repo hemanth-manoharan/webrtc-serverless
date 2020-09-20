@@ -241,7 +241,7 @@ app.appView = new app.ChatListView({collection: app.chatList});
 let peerJSMode = 'remote';
 
 // Default is remote
-let peerJSHost = 'glacial-temple-29018.herokuapp.com';
+let peerJSHost = 'peerjs-srv-vpa-mod.herokuapp.com';
 let peerJSPort = 443;
 let peerJSSecure = 'true';
 
