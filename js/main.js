@@ -255,11 +255,15 @@ if (peerJSMode === 'local') {
 // github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
 let peer = null;
 if (app.userInfoColl !== undefined) {
-  // peer = new Peer(app.userInfoColl.at(0).toJSON().userName,
-  //   {host: 'localhost', port: 9000, path: '/peerjs'});
+  if (peerJSMode === 'local') {
+    peer = new Peer(app.userInfoColl.at(0).toJSON().userName,
+      {host: 'localhost', port: 9000, path: '/peerjs'});
+  } else {
   peer = new Peer(app.userInfoColl.at(0).toJSON().userName,
     {host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
+  }
 } else {
+  console.log('ERROR: app.userInfoColl is undefined!');
   // peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
   peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
 }
