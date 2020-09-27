@@ -36,11 +36,8 @@
     <div id="statusPanel">Status: <div id="status"></div></div>
     <br>
 
-    <section id="chats">
-      <h1>Chats</h1>
-      <button id="clearChats">Clear All</button>
-      <ul id="chatList"></ul>
-    </section>
+    <div id="chats">
+    </div>
 
     <br>
 
@@ -59,12 +56,6 @@
       </footer>
     </section>
 
-    <script type="text/template" id="chat-template">
-      <div class="view">
-        <label><b><%- id %></b></label>
-      </div>
-    </script>
-
     <script type="text/template" id="message-template">
       <div class="view">
         <label><b><%-userName %></b>
@@ -79,7 +70,13 @@
       </div>
     </script>
 
-    <script src="js/main.js" type="text/javascript">
+    <!-- Load React. -->
+    <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script src="js/main.js" type="text/babel">
     </script>
   </body>
 

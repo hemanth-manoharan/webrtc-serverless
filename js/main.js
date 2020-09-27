@@ -58,50 +58,98 @@ app.SessionInfoCollection = Backbone.Collection.extend({
 
 /// End - Model Definitions
 
+/// Start - React Components
+function ChatView(props) {
+  return (<li>{props.chat.id}</li>)
+}
+
+class ChatListView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { collection: props.collection };
+
+    this.state.collection.fetch(); // Loads list from local storage
+    this.state.collection.on('add', this.refresh, this);
+    this.state.collection.on('reset', this.refresh, this);
+  }
+
+  refresh() {
+    this.setState({
+      collection: this.state.collection
+    })
+  }
+
+  clearChatHistory() {
+    if (this.state.collection) {
+      var length = this.state.collection.length;
+      for (var i = 0; i < length; i++) {
+        this.state.collection.at(0).destroy();
+      }
+    }
+    this.setState({
+      collection: null
+    });
+  }
+
+  render() {
+    const chats = (this.state.collection) ? this.state.collection.map((elem) => 
+      <ChatView key={elem.id} chat={elem}/>) : null
+    return (
+      <div id="chats">
+        <h1>Chats</h1>
+        <button onClick={() => this.clearChatHistory()}>Clear All</button>
+        <ul id="chatList">{chats}</ul>
+      </div>
+    )
+  }
+}
+
+/// End - React Components
+
 /// Start - View Definitions
 
-app.ChatView = Backbone.View.extend({
-  tagName: 'li',
-  template: _.template($('#chat-template').html()),
-  render: function() {
-    this.$el.html(this.template(this.model.toJSON()));
-    return this; // enable chained calls
-  },
-  initialize: function() {
-    this.model.on('change', this.render, this);
-    this.model.on('destroy', this.remove, this);
-  },
-});
+// app.ChatView = Backbone.View.extend({
+//   tagName: 'li',
+//   template: _.template($('#chat-template').html()),
+//   render: function() {
+//     this.$el.html(this.template(this.model.toJSON()));
+//     return this; // enable chained calls
+//   },
+//   initialize: function() {
+//     this.model.on('change', this.render, this);
+//     this.model.on('destroy', this.remove, this);
+//   },
+// });
 
 // Renders the full list of chats calling ChatView
 // for each individual chat object
-app.ChatListView = Backbone.View.extend({
-  el: '#chats',
-  initialize: function() {
-    this.collection.on('add', this.addAll, this);
-    this.collection.on('reset', this.addAll, this);
-    this.collection.fetch(); // Loads list from local storage
-  },
-  events: {
-    'click #clearChats': 'clearChatHistory'
-  },
-  clearChatHistory: function(e) {
-    var length = this.collection.length;
-    for (var i = 0; i < length; i++) {
-      this.collection.at(0).destroy();
-    }
-  },
-  addOne: function(chat) {
-    var view = new app.ChatView({model: chat});
-    $('#chatList').append(view.render().el);
-  },
-  addAll: function() {
-    // Clean the chats list
-    this.$('#chatList').html('');
+// app.ChatListView = Backbone.View.extend({
+//   el: '#chats',
+//   initialize: function() {
+//     this.collection.on('add', this.addAll, this);
+//     this.collection.on('reset', this.addAll, this);
+//     this.collection.fetch(); // Loads list from local storage
+//   },
+//   events: {
+//     'click #clearChats': 'clearChatHistory'
+//   },
+//   clearChatHistory: function(e) {
+//     var length = this.collection.length;
+//     for (var i = 0; i < length; i++) {
+//       this.collection.at(0).destroy();
+//     }
+//   },
+//   addOne: function(chat) {
+//     var view = new app.ChatView({model: chat});
+//     $('#chatList').append(view.render().el);
+//   },
+//   addAll: function() {
+//     // Clean the chats list
+//     this.$('#chatList').html('');
 
-    this.collection.each(this.addOne, this);
-  }
-});
+//     this.collection.each(this.addOne, this);
+//   }
+// });
 
 app.MessageView = Backbone.View.extend({
   tagName: 'li',
@@ -234,7 +282,11 @@ app.userInfoView = new app.UserInfoView({model: app.userInfoColl});
 app.userInfoView.render();
 
 app.chatList = new app.ChatList();
-app.appView = new app.ChatListView({collection: app.chatList});
+// app.appView = new app.ChatListView({collection: app.chatList});
+const domContainer = document.querySelector('#chats');
+ReactDOM.render(
+  <ChatListView collection={app.chatList} />, 
+  domContainer);
 
 // PeerJS related code
 
