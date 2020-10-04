@@ -79,7 +79,7 @@ class ChatListView extends React.Component {
     })
   }
 
-  clearChatHistory() {
+  clearChatContactHistory() {
     if (this.state.collection) {
       var length = this.state.collection.length;
       for (var i = 0; i < length; i++) {
@@ -92,13 +92,13 @@ class ChatListView extends React.Component {
   }
 
   render() {
-    const chats = (this.state.collection) ? this.state.collection.map((elem) => 
+    const chatContacts = (this.state.collection) ? this.state.collection.map((elem) => 
       <ChatView key={elem.id} chat={elem}/>) : null
     return (
-      <div id="chats">
-        <h1>Chats</h1>
-        <button onClick={() => this.clearChatHistory()}>Clear All</button>
-        <ul id="chatList">{chats}</ul>
+      <div id="chatContacts">
+        <h1>Contacts</h1>
+        <button onClick={() => this.clearChatContactHistory()}>Clear All</button>
+        <ul id="chatContactList">{chatContacts}</ul>
       </div>
     )
   }
@@ -107,49 +107,6 @@ class ChatListView extends React.Component {
 /// End - React Components
 
 /// Start - View Definitions
-
-// app.ChatView = Backbone.View.extend({
-//   tagName: 'li',
-//   template: _.template($('#chat-template').html()),
-//   render: function() {
-//     this.$el.html(this.template(this.model.toJSON()));
-//     return this; // enable chained calls
-//   },
-//   initialize: function() {
-//     this.model.on('change', this.render, this);
-//     this.model.on('destroy', this.remove, this);
-//   },
-// });
-
-// Renders the full list of chats calling ChatView
-// for each individual chat object
-// app.ChatListView = Backbone.View.extend({
-//   el: '#chats',
-//   initialize: function() {
-//     this.collection.on('add', this.addAll, this);
-//     this.collection.on('reset', this.addAll, this);
-//     this.collection.fetch(); // Loads list from local storage
-//   },
-//   events: {
-//     'click #clearChats': 'clearChatHistory'
-//   },
-//   clearChatHistory: function(e) {
-//     var length = this.collection.length;
-//     for (var i = 0; i < length; i++) {
-//       this.collection.at(0).destroy();
-//     }
-//   },
-//   addOne: function(chat) {
-//     var view = new app.ChatView({model: chat});
-//     $('#chatList').append(view.render().el);
-//   },
-//   addAll: function() {
-//     // Clean the chats list
-//     this.$('#chatList').html('');
-
-//     this.collection.each(this.addOne, this);
-//   }
-// });
 
 app.MessageView = Backbone.View.extend({
   tagName: 'li',
@@ -283,7 +240,7 @@ app.userInfoView.render();
 
 app.chatList = new app.ChatList();
 // app.appView = new app.ChatListView({collection: app.chatList});
-const domContainer = document.querySelector('#chats');
+const domContainer = document.querySelector('#chatContacts');
 ReactDOM.render(
   <ChatListView collection={app.chatList} />, 
   domContainer);
