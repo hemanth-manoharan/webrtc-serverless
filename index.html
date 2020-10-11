@@ -17,7 +17,7 @@
   <body>
     <h2>Realtime chat with PeerJS</h2>
     <br>
-    <h3>v0.1.1</h3>
+    <h3>v0.1.2</h3>
     <br>
 
     <h3><div id="selfPeerId"></div></h3>
@@ -41,28 +41,8 @@
 
     <br>
 
-    <section id="chat">
-      <header id="header">
-          <h1>Messages</h1>
-          <button id="clearMessages">Clear All</button>
-          <br>
-      </header>
-      <section id="messages">
-        <ul id="messageList"></ul>
-      </section>
-      <footer id="footer">
-        <br>
-        <input id="message" placeholder="Type message ... ">
-      </footer>
-    </section>
-
-    <script type="text/template" id="message-template">
-      <div class="view">
-        <label><b><%-userName %></b>
-          (<%- new Date(timestamp).toLocaleString() %>): 
-          <%- body %></label>
-      </div>
-    </script>
+    <div id="chat">
+    </div>
 
     <script type="text/template" id="user-info-template">
       <div class="view">

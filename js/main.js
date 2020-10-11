@@ -8,12 +8,12 @@ var app = {}; // create app namespace
 
 // Model - Chat
 
-// For 1-1 chat - The id is the same
+// For 1-1 chat - The userId is the same
 // as the userName of the remote peer
 // and members is empty
 app.Chat = Backbone.Model.extend({
   default: {
-    id: '',
+    userId: '',
     members: []
   }
 });
@@ -21,7 +21,7 @@ app.Chat = Backbone.Model.extend({
 app.ChatList = Backbone.Collection.extend({
   model: app.Chat,
   localStorage: new Store("backbone-chat")
-})
+});
 
 // Model - Message
 app.Message = Backbone.Model.extend({
@@ -60,7 +60,7 @@ app.SessionInfoCollection = Backbone.Collection.extend({
 
 /// Start - React Components
 function ChatView(props) {
-  return (<li>{props.chat.id}</li>)
+  return (<li>{props.chat.get('userId')}</li>)
 }
 
 class ChatListView extends React.Component {
@@ -76,7 +76,7 @@ class ChatListView extends React.Component {
   refresh() {
     this.setState({
       collection: this.state.collection
-    })
+    });
   }
 
   clearChatContactHistory() {
@@ -87,90 +87,124 @@ class ChatListView extends React.Component {
       }
     }
     this.setState({
-      collection: null
+      collection: this.state.collection
     });
   }
 
   render() {
     const chatContacts = (this.state.collection) ? this.state.collection.map((elem) => 
-      <ChatView key={elem.id} chat={elem}/>) : null
+      <ChatView key={elem.get('userId')} chat={elem}/>) : null;
     return (
-      <div id="chatContacts">
+      <div>
         <h1>Contacts</h1>
         <button onClick={() => this.clearChatContactHistory()}>Clear All</button>
         <ul id="chatContactList">{chatContacts}</ul>
       </div>
-    )
+    );
+  }
+}
+
+function MessageView(props) {
+  return (
+    <li>
+      <label>
+        <b>{props.message.get('userName')} </b>
+        {new Date(props.message.get('timestamp')).toLocaleString()}: {props.message.get('body')}
+      </label>
+    </li>);
+}
+
+class MessageListView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { currMessage: '', collection: props.collection };
+
+    this.state.collection.fetch(); // Loads list from local storage
+    this.state.collection.on('add', this.refresh, this);
+    this.state.collection.on('reset', this.refresh, this);
+
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleCurrMessageChange = this.handleCurrMessageChange.bind(this);
+  }
+
+  refresh() {
+    this.setState({
+      currMessage: this.state.currMessage,
+      collection: this.state.collection
+    });
+  }
+
+  clearMessageHistory() {
+    if (this.state.collection) {
+      var length = this.state.collection.length;
+      for (var i = 0; i < length; i++) {
+        this.state.collection.at(0).destroy();
+      }
+    } else {
+      console.error("Message collection is undefined!")
+    }
+    this.setState({
+      currMessage: '',
+      collection: this.state.collection
+    });
+  }
+
+  handleCurrMessageChange(event) {
+    this.setState({...this.state, currMessage: event.target.value});
+  }
+
+  handleSubmit(event) {
+    // alert('A name was submitted: ' + this.state.value);
+    event.preventDefault();
+   
+    const msg = this.state.currMessage.trim();
+    if (!msg) {
+      return;
+    }
+
+    // Send message via WebRTC here
+    rtcConn.send(msg);
+
+    this.state.collection.create({
+      body: msg,
+      userName: app.userInfoColl.at(0).toJSON().userName,
+      timestamp: Date.now()
+    });
+
+    // Update local state
+    this.setState({
+      currMessage: '',
+      collection: this.state.collection
+    });
+  }
+
+  render() {
+    const messages = (this.state.collection) ? this.state.collection.map((elem) => 
+      <MessageView key={elem.get('timestamp')} message={elem}/>) : null;
+    return (
+      <div>
+        <div id="header">
+          <h1>Messages</h1>
+          <button onClick={() => this.clearMessageHistory()}>Clear All</button>
+        </div>
+        <div id="messages">
+          <ul id="messageList">{messages}</ul>
+        </div>
+        <div id="footer">
+          <br/>
+          <form onSubmit={this.handleSubmit}>
+            <input type="text" value={this.state.currMessage} onChange={this.handleCurrMessageChange} />
+            <input type="submit" value="Send" />
+          </form>
+        </div>
+      </div>
+    );
   }
 }
 
 /// End - React Components
 
 /// Start - View Definitions
-
-app.MessageView = Backbone.View.extend({
-  tagName: 'li',
-  template: _.template($('#message-template').html()),
-  render: function() {
-    this.$el.html(this.template(this.model.toJSON()));
-    return this; // enable chained calls
-  },
-  initialize: function() {
-    this.model.on('change', this.render, this);
-    this.model.on('destroy', this.remove, this);
-  },
-});
-
-// Renders the full list of messages calling MessageView
-// for each message
-app.MessageListView = Backbone.View.extend({
-  el: '#chat',
-  initialize: function() {
-    this.input = this.$('#message');
-    this.collection.on('add', this.addAll, this);
-    this.collection.on('reset', this.addAll, this);
-    this.collection.fetch(); // Loads list from local storage
-  },
-  events: {
-    'keypress #message': 'sendMessageOnEnter',
-    'click #clearMessages': 'clearMessageHistory'
-  },
-  sendMessageOnEnter: function(e) {
-    if (e.which !== 13 || !this.input.val().trim()) {
-      // Enter key == 13
-      return;
-    }
-
-    // Send message via WebRTC here
-    rtcConn.send(this.input.val().trim());
-
-    this.collection.create(this.newAttributes());
-    this.input.val('');
-  },
-  clearMessageHistory: function(e) {
-    var length = this.collection.length;
-    for (var i = 0; i < length; i++) {
-      this.collection.at(0).destroy();
-    }
-  },
-  addOne: function(message) {
-    var view = new app.MessageView({model: message});
-    $('#messageList').append(view.render().el);
-  },
-  addAll: function() {
-    // Clean the message list
-    this.$('#messageList').html('');
-
-    this.collection.each(this.addOne, this);
-  },
-  newAttributes: function() {
-    return {
-      body: this.input.val().trim(),
-      userName: app.userInfoColl.at(0).toJSON().userName,
-      timestamp: Date.now()
-    }
-  }
-});
 
 app.UserInfoView = Backbone.View.extend({
   el: '#userId',
@@ -195,8 +229,8 @@ app.UserInfoView = Backbone.View.extend({
 
 // Add to chatList if it is not already present
 function addToChatList(peerUserName) {
-  if (app.chatList.where({id: peerUserName}).length === 0) {
-    app.chatList.create({id: peerUserName});
+  if (app.chatList.where({userId: peerUserName}).length === 0) {
+    app.chatList.create({userId: peerUserName});
   }
 }
 
@@ -206,15 +240,12 @@ function selectChat(peerUserName) {
     model: app.Message,
     localStorage: new Store("backbone-message-" + peerUserName),
   });
-  app.messageList = new app.MessageList();
 
-  if (app.messageListView !== undefined) {
-    // TODO This switch is not working
-    app.messageListView.collection = app.messageList;
-    app.messageListView.initialize();
-  } else {
-    app.messageListView = new app.MessageListView({collection: app.messageList});
-  }
+  app.messageList = new app.MessageList();
+  const domContainer = document.querySelector('#chat');
+  ReactDOM.render(
+    <MessageListView collection={app.messageList} />, 
+    domContainer)
 }
 
 /// End - Utility
@@ -239,7 +270,6 @@ app.userInfoView = new app.UserInfoView({model: app.userInfoColl});
 app.userInfoView.render();
 
 app.chatList = new app.ChatList();
-// app.appView = new app.ChatListView({collection: app.chatList});
 const domContainer = document.querySelector('#chatContacts');
 ReactDOM.render(
   <ChatListView collection={app.chatList} />, 
