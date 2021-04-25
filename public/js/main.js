@@ -277,7 +277,7 @@ ReactDOM.render(
 
 // PeerJS related code
 
-let peerJSMode = 'remote';
+let peerJSMode = 'local';
 
 // Default is remote
 let peerJSHost = 'peerjs-srv-vpa-mod.herokuapp.com';
