@@ -202,28 +202,15 @@ class MessageListView extends React.Component {
   }
 }
 
+function UserInfoView(props) {
+  return (
+    <div>
+      <label>UserName: {props.userName}</label>
+    </div>
+  );
+}
+
 /// End - React Components
-
-/// Start - View Definitions
-
-app.UserInfoView = Backbone.View.extend({
-  el: '#userId',
-  template: _.template($('#user-info-template').html()),
-  render: function() {
-    console.info('UserInfoView render triggered ... ');
-
-    if (this.model.length > 0) {
-      this.$el.html(this.template(this.model.at(0).toJSON()));
-    }
-    return this; // enable chained calls
-  },
-  initialize: function() {
-    this.model.on('add', this.render, this);
-    this.model.on('reset', this.render, this);
-  },
-});
-
-/// End - View Definitions
 
 /// Start - Utility Functions
 
@@ -266,14 +253,16 @@ if (app.userInfoColl.length == 0) {
 
 app.sessionInfoColl = new app.SessionInfoCollection();
 
-app.userInfoView = new app.UserInfoView({model: app.userInfoColl});
-app.userInfoView.render();
+const userInfoDomContainer = document.querySelector('#userInfoPanel');
+ReactDOM.render(
+  <UserInfoView userName={app.userInfoColl.at(0).toJSON().userName} />,
+  userInfoDomContainer);
 
 app.chatList = new app.ChatList();
-const domContainer = document.querySelector('#chatContacts');
+const chatListDomContainer = document.querySelector('#chatContacts');
 ReactDOM.render(
   <ChatListView collection={app.chatList} />, 
-  domContainer);
+  chatListDomContainer);
 
 // PeerJS related code
 
