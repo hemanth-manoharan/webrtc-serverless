@@ -353,6 +353,8 @@ function setupConnection(conn) {
   $('#status').html('Connected to ' + conn.peer);
 
   conn.on('open', function() {
+    // hemanth-manoharan
+    // TODO Send Public Key along with userName here
     sendCommand(conn, 'userId', app.userInfoColl.at(0).toJSON().userName);
 
     // Receive messages
@@ -397,7 +399,9 @@ function isCommandMessage(data) {
 }
 
 function processCommand(data) {
+  // hemanth-manoharan
   // TODO Very rudimentary impl. for now
+  // TODO Process Public Key received from peer here.
   let commandName = data.split(':')[0];
   switch(commandName) {
     case 'userId':
