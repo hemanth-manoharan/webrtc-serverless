@@ -33,6 +33,8 @@ app.Message = Backbone.Model.extend({
 });
 
 // Model - User Info
+// TODO Add Public Private Key Pair
+// to this model.
 app.UserInfo = Backbone.Model.extend({
   defaults: {
     userName: '',
@@ -248,6 +250,8 @@ if (app.userInfoColl.length == 0) {
 
   if (userNameVal != null) {
     app.userInfoColl.create({userName: userNameVal});
+    // TODO Generate Public, Private Key Pair here and
+    // store it in the userInfoColl.
   }
 }
 
@@ -266,7 +270,7 @@ ReactDOM.render(
 
 // PeerJS related code
 
-let peerJSMode = 'local';
+let peerJSMode = 'remote';
 
 // Default is remote
 let peerJSHost = 'peerjs-srv-vpa-mod.herokuapp.com';
