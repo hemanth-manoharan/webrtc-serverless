@@ -33,11 +33,11 @@ app.Message = Backbone.Model.extend({
 });
 
 // Model - User Info
-// TODO Add Public Private Key Pair
-// to this model.
 app.UserInfo = Backbone.Model.extend({
   defaults: {
     userName: '',
+    pubKeyJWK: '',
+    pvtKeyJWK: ''
   }
 });
 
@@ -204,12 +204,43 @@ class MessageListView extends React.Component {
   }
 }
 
-function UserInfoView(props) {
-  return (
-    <div>
-      <label>UserName: {props.userName}</label>
-    </div>
-  );
+class UserInfoView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      collection: props.userInfoColl
+    };
+    this.state.collection.on('change', this.refresh, this);
+  }
+
+  refresh() {
+    this.setState({
+      collection: this.state.collection
+    });
+  }
+
+  clearUserInfo() {
+    if (this.state.collection) {
+      var length = this.state.collection.length;
+      for (var i = 0; i < length; i++) {
+        this.state.collection.at(0).destroy();
+      }
+      // Update local state
+      this.setState({
+        collection: this.state.collection
+      });
+    }
+  }
+
+  render() {
+    return (
+      <div>
+        <label>UserName: {(this.state.collection && this.state.collection.at(0)) 
+          ? this.state.collection.at(0).userName : "NOT SET"}</label>
+        <button onClick={() => this.clearUserInfo()}>Clear User Info</button>
+      </div>
+    );
+  }
 }
 
 /// End - React Components
@@ -237,7 +268,128 @@ function selectChat(peerUserName) {
     domContainer)
 }
 
+function populateUserInfoCollection(userName) {
+  // Generate <Public, Private> key pair here and
+  // store it in the userInfoColl.
+  const keyPairPromise = generateKeyPair();
+
+  app.userInfoColl.create({
+    userName: userName
+  });
+
+  keyPairPromise.then(
+    function(keyPair) {
+      let pubKeyPromise = exportKeyJWK(keyPair.publicKey);
+      pubKeyPromise.then(
+        function(key) {
+          let userInfo = app.userInfoColl.at(0);
+          userInfo.set({
+            ...userInfo,
+            pubKeyJWK: key,
+          });
+          app.userInfoColl.set([userInfo]);
+
+          // Now trigger the private key set
+          // in succession to avoid race conditions.
+          let pvtKeyPromise = exportKeyJWK(keyPair.privateKey);
+          pvtKeyPromise.then(
+            function(key) {
+              let userInfo = app.userInfoColl.at(0);
+              userInfo.set({
+                ...userInfo,
+                pvtKeyJWK: key,
+              });
+              app.userInfoColl.set([userInfo]);
+            },
+            function(error) {
+              console.log(`Error updating private key in user info: ${error}`);
+            }
+          );
+        },
+        function(error) {
+          console.log(`Error updating public key in user info: ${error}`);
+        }
+      );
+    },
+    function(error) {
+      console.log(`Error updating key-pair in user info: ${error}`);
+    }
+  );
+}
+
 /// End - Utility
+
+/// Start - Web Crypto Utility
+
+async function generateKeyPair() {
+  let keyPair = await window.crypto.subtle.generateKey({
+      name: "ECDH",
+      namedCurve: "P-256"
+    },
+    true,
+    ["deriveKey"]
+  );
+  return keyPair;
+}
+
+async function exportKeyJWK(key) {
+  const exportedJWK = await window.crypto.subtle.exportKey(
+    "jwk",
+    key
+  );
+  return exportedJWK;
+}
+
+// async function checkEncryptAndDecrypt(keyPair) {
+//   let secretKey = window.crypto.subtle.deriveKey(
+//     {
+//       name: "ECDH",
+//       public: keyPair.publicKey
+//     },
+//     keyPair.privateKey,
+//     {
+//       name: "AES-GCM",
+//       length: 256
+//     },
+//     false,
+//     ["encrypt", "decrypt"]
+//   );
+
+//   // Encrypt
+//   iv = window.crypto.getRandomValues(new Uint8Array(12));
+//   let encoded = getMessageEncoding();
+
+//   ciphertext = await window.crypto.subtle.encrypt(
+//     {
+//       name: "AES-GCM",
+//       iv: iv
+//     },
+//     secretKey,
+//     encoded
+//   );
+
+//   let buffer = new Uint8Array(ciphertext, 0, 5);
+//   console.log(`${buffer}...[${ciphertext.byteLength} bytes total]`);
+
+//   // Decrypt
+//   try {
+//     let decrypted = await window.crypto.subtle.decrypt(
+//       {
+//         name: "AES-GCM",
+//         iv: iv
+//       },
+//       secretKey,
+//       ciphertext
+//     );
+
+//     let dec = new TextDecoder();
+//     console.log(dec.decode(decrypted));
+//   } catch (e) {
+//     console.log("*** Decryption error ***");
+//   }
+// }
+
+/// End - Web Crypto Utility 
 
 // Initialize the app
 
@@ -249,9 +401,7 @@ if (app.userInfoColl.length == 0) {
   let userNameVal = prompt("User name", "Please enter your user name ...");
 
   if (userNameVal != null) {
-    app.userInfoColl.create({userName: userNameVal});
-    // TODO Generate Public, Private Key Pair here and
-    // store it in the userInfoColl.
+    populateUserInfoCollection(userNameVal);
   }
 }
 
@@ -259,7 +409,7 @@ app.sessionInfoColl = new app.SessionInfoCollection();
 
 const userInfoDomContainer = document.querySelector('#userInfoPanel');
 ReactDOM.render(
-  <UserInfoView userName={app.userInfoColl.at(0).toJSON().userName} />,
+  <UserInfoView userInfoColl={app.userInfoColl} />,
   userInfoDomContainer);
 
 app.chatList = new app.ChatList();
