@@ -210,6 +210,9 @@ class UserInfoView extends React.Component {
     this.state = {
       collection: props.userInfoColl
     };
+    this.state.collection.fetch(); // Loads list from local storage
+    this.state.collection.on('add', this.refresh, this);
+    this.state.collection.on('reset', this.refresh, this);
     this.state.collection.on('change', this.refresh, this);
   }
 
@@ -281,25 +284,25 @@ function populateUserInfoCollection(userName) {
     function(keyPair) {
       let pubKeyPromise = exportKeyJWK(keyPair.publicKey);
       pubKeyPromise.then(
-        function(key) {
-          let userInfo = app.userInfoColl.at(0);
-          userInfo.set({
-            ...userInfo,
-            pubKeyJWK: key,
+        function(pubKey) {
+          app.userInfoColl.at(0).destroy();
+          app.userInfoColl.create({
+            userName: userName,
+            pubKeyJWK: pubKey
           });
-          app.userInfoColl.set([userInfo]);
 
           // Now trigger the private key set
           // in succession to avoid race conditions.
           let pvtKeyPromise = exportKeyJWK(keyPair.privateKey);
           pvtKeyPromise.then(
-            function(key) {
-              let userInfo = app.userInfoColl.at(0);
-              userInfo.set({
-                ...userInfo,
-                pvtKeyJWK: key,
+            function(pvtKey) {
+              app.userInfoColl.fetch();
+              app.userInfoColl.at(0).destroy();
+              app.userInfoColl.create({
+                userName: userName,
+                pubKeyJWK: pubKey,
+                pvkKeyJWK: pvtKey 
               });
-              app.userInfoColl.set([userInfo]);
             },
             function(error) {
               console.log(`Error updating private key in user info: ${error}`);
