@@ -1,7 +1,17 @@
 'use strict';
 
-// Backbone Related Code
+// Global variables
 
+// peerjs related
+let peer = null;
+let rtcConn = null;
+let peerJSMode = 'local'; // Other value is 'remote'
+
+// Security related
+// Cache the pvt key as an optimization
+let gblPvtKey = null;
+
+// Backbone Related Code
 var app = {}; // create app namespace
 
 /// Start - Model Definitions
@@ -276,33 +286,26 @@ function populateUserInfoCollection(userName) {
   // store it in the userInfoColl.
   const keyPairPromise = generateKeyPair();
 
-  app.userInfoColl.create({
-    userName: userName
-  });
-
   keyPairPromise.then(
     function(keyPair) {
       let pubKeyPromise = exportKeyJWK(keyPair.publicKey);
       pubKeyPromise.then(
-        function(pubKey) {
-          app.userInfoColl.at(0).destroy();
-          app.userInfoColl.create({
-            userName: userName,
-            pubKeyJWK: pubKey
-          });
-
+        function(pubKeyJWK) {
           // Now trigger the private key set
           // in succession to avoid race conditions.
           let pvtKeyPromise = exportKeyJWK(keyPair.privateKey);
           pvtKeyPromise.then(
-            function(pvtKey) {
-              app.userInfoColl.fetch();
-              app.userInfoColl.at(0).destroy();
+            function(pvtKeyJWK) {
               app.userInfoColl.create({
                 userName: userName,
-                pubKeyJWK: pubKey,
-                pvkKeyJWK: pvtKey 
+                pubKeyJWK: pubKeyJWK,
+                pvtKeyJWK: pvtKeyJWK 
               });
+
+              app.userInfoColl.fetch();
+
+              // Trigger peerJS initialization here
+              peerJSInitPrep();
             },
             function(error) {
               console.log(`Error updating private key in user info: ${error}`);
@@ -325,23 +328,54 @@ function populateUserInfoCollection(userName) {
 /// Start - Web Crypto Utility
 
 async function generateKeyPair() {
-  let keyPair = await window.crypto.subtle.generateKey({
-      name: "ECDH",
-      namedCurve: "P-256"
+  const keyPairPromise = await window.crypto.subtle.generateKey({
+      name: "ECDSA",
+      namedCurve: "P-384"
     },
     true,
-    ["deriveKey"]
+    ["sign", "verify"]
   );
-  return keyPair;
+  return keyPairPromise;
+}
+
+async function sign(pvtKey, data) {
+  const signPromise = await window.crypto.subtle.sign(
+    {
+      name: "ECDSA",
+      hash: {name: "SHA-384"},
+    },
+    pvtKey,
+    data
+  );
+  return signPromise;
 }
 
 async function exportKeyJWK(key) {
-  const exportedJWK = await window.crypto.subtle.exportKey(
+  const exportedJWKPromise = await window.crypto.subtle.exportKey(
     "jwk",
     key
   );
-  return exportedJWK;
+  return exportedJWKPromise;
 }
+
+async function importKeyJWK(jwk) {
+  const importedKeyPromise = await window.crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    {
+      name: "ECDSA",
+      namedCurve: "P-384"
+    },
+    true,
+    ["sign"]
+  );
+  return importedKeyPromise;
+}
+
+// Ref: https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+// function ab2str(buf) {
+//   return String.fromCharCode.apply(null, new Uint16Array(buf));
+// }
 
 // async function checkEncryptAndDecrypt(keyPair) {
 //   let secretKey = window.crypto.subtle.deriveKey(
@@ -397,6 +431,7 @@ async function exportKeyJWK(key) {
 // Initialize the app
 
 app.userInfoColl = new app.UserInfoCollection();
+app.sessionInfoColl = new app.SessionInfoCollection();
 
 app.userInfoColl.fetch(); // Loads list from local storage
 console.log('User Info Collection Length: ' + app.userInfoColl.length);
@@ -406,14 +441,9 @@ if (app.userInfoColl.length == 0) {
   if (userNameVal != null) {
     populateUserInfoCollection(userNameVal);
   }
+} else {
+  peerJSInitPrep();
 }
-
-app.sessionInfoColl = new app.SessionInfoCollection();
-
-const userInfoDomContainer = document.querySelector('#userInfoPanel');
-ReactDOM.render(
-  <UserInfoView userInfoColl={app.userInfoColl} />,
-  userInfoDomContainer);
 
 app.chatList = new app.ChatList();
 const chatListDomContainer = document.querySelector('#chatContacts');
@@ -421,82 +451,130 @@ ReactDOM.render(
   <ChatListView collection={app.chatList} />, 
   chatListDomContainer);
 
-// PeerJS related code
+// PeerJS related init code
+function peerJSInitPrep() {
+  const userInfoDomContainer = document.querySelector('#userInfoPanel');
+  ReactDOM.render(
+    <UserInfoView userInfoColl={app.userInfoColl} />,
+    userInfoDomContainer);
 
-let peerJSMode = 'remote';
+  // let timestamp = Date.now();
+ 
+  // app.userInfoColl.fetch();
+  let id = app.userInfoColl.at(0).toJSON().userName;
+  
+  let pvtKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pvtKeyJWK);
+  let pvtKeyPromise = importKeyJWK(JSON.parse(pvtKeyJWK));
 
-// Default is remote
-let peerJSHost = 'peerjs-srv-vpa-mod.herokuapp.com';
-let peerJSPort = 443;
-let peerJSSecure = 'true';
+  pvtKeyPromise.then(
+    function(pvtKey) {
+      gblPvtKey = pvtKey;
 
-if (peerJSMode === 'local') {
-  peerJSHost = 'localhost';
-  peerJSPort = 9000;
-  peerJSSecure = 'false';
+      // const data = id + ':' + timestamp;
+      // const enc = new TextEncoder();
+      // const encoded = enc.encode(data);
+
+      // const signaturePromise = sign(pvtKey, encoded);
+
+      // signaturePromise.then(
+      //   function(signature) {
+      //     let dec = new TextDecoder();
+      peerJSInit(id);
+      //   },
+      //   function(error){
+      //     console.log(`Error generating signature: ${error}`);
+      //   }
+      // );
+    },
+    function(error) {
+      console.log(`Error updating importing pvt key: ${error}`);
+    }
+  );
 }
-   
 
-// github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
-let peer = null;
-if (app.userInfoColl !== undefined) {
+function peerJSInit(id) {
+  // github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
+  let peerJSHost = 'peerjs-srv-vpa-mod.herokuapp.com';
+  let peerJSPort = 443;
+  let peerJSSecure = 'true';
+
   if (peerJSMode === 'local') {
-    peer = new Peer(app.userInfoColl.at(0).toJSON().userName,
-      {host: 'localhost', port: 9000, path: '/peerjs'});
-  } else {
-  peer = new Peer(app.userInfoColl.at(0).toJSON().userName,
-    {host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
+    peerJSHost = 'localhost';
+    peerJSPort = 9000;
+    peerJSSecure = 'false';
   }
-} else {
-  console.log('ERROR: app.userInfoColl is undefined!');
-  // peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
-  peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
+
+  // Get public key in string format
+  // let peerJSPublicKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pubKeyJWK);
+
+  if (app.userInfoColl !== undefined) {
+    if (peerJSMode === 'local') {
+      peer = new Peer(id, {
+          host: 'localhost', port: 9000, path: '/peerjs',
+          authNModel: "SIGNATURE"
+      });
+    } else {
+      peer = new Peer(id, {
+          host: peerJSHost, port: peerJSPort, path: '/peerjs',
+          secure: peerJSSecure,
+          authNModel: "SIGNATURE",
+      });
+    }
+  } else {
+    console.log('ERROR: app.userInfoColl is undefined!');
+    // peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
+    peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
+  }
+
+  // This remote PeerJS cloud server works.
+  // let peer = new Peer({key: 'lwjd5qra8257b9'});
+
+  peer.on('open', updateSelfPeerId);
+
+  peer.on('close', function() { 
+    $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
+  });
+  peer.on('disconnected', function() {
+    $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
+  });
+
+  peer.on('connection', function(conn) {
+    console.log('Peer received connection event ...');
+
+    if (rtcConn !== null) {
+      rtcConn.close();
+    }
+
+    rtcConn = conn;
+    setupConnection(conn);
+  });
+
+  $('#peerConnectButton').click(function() {
+    console.log('Connecting to peer ...' + $('#peerId').val());
+
+    if (rtcConn !== null) {
+      rtcConn.close();
+
+      // TODO Why are we destroying the 'peer' as well?
+      // It should be sufficient to just close the rtcConn.
+      // TODO This flow is not enabled for encryption and
+      // signature based authentication.
+      peer.destroy();
+      peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: 'true'});
+      peer.on('open', updateSelfPeerId);
+
+      setTimeout(connectNew, 3000);
+    } else {
+      connectNew();
+    }
+  });
 }
-
-// This remote PeerJS cloud server works.
-// let peer = new Peer({key: 'lwjd5qra8257b9'});
-
-let rtcConn = null;
 
 function updateSelfPeerId(id) {
   console.log('Peer received open event ...');
   console.log('My peer ID is: ' + id);
   $('#selfPeerId').html('Peer Id - ' + id);
 }
-
-peer.on('open', updateSelfPeerId);
-
-peer.on('close', function() { 
-  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
-});
-peer.on('disconnected', function() {
-  $('#status').html('Disconnected from ' + app.sessionInfoColl.at(0).toJSON().peerUserName);
-});
-
-peer.on('connection', function(conn) {
-  console.log('Peer received connection event ...');
-
-  if (rtcConn !== null) {
-    rtcConn.close();
-  }
-
-  rtcConn = conn;
-  setupConnection(conn);
-});
-
-$('#peerConnectButton').click(function() {
-  console.log('Connecting to peer ...' + $('#peerId').val());
-
-  if (rtcConn !== null) {
-    rtcConn.close();
-    peer.destroy();
-    peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: 'true'});
-    peer.on('open', updateSelfPeerId);
-    setTimeout(connectNew, 3000);
-  } else {
-    connectNew();
-  }
-});
 
 function connectNew() {
   var conn = peer.connect($('#peerId').val());
@@ -511,7 +589,6 @@ function setupConnection(conn) {
 
   conn.on('open', function() {
     // hemanth-manoharan
-    // TODO Send Public Key along with userName here
     sendCommand(conn, 'userId', app.userInfoColl.at(0).toJSON().userName);
 
     // Receive messages
@@ -558,7 +635,6 @@ function isCommandMessage(data) {
 function processCommand(data) {
   // hemanth-manoharan
   // TODO Very rudimentary impl. for now
-  // TODO Process Public Key received from peer here.
   let commandName = data.split(':')[0];
   switch(commandName) {
     case 'userId':
