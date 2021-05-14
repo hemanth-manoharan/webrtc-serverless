@@ -6828,12 +6828,18 @@ function () {
     return location.protocol === "https:";
   };
 
-  class_1.prototype.sendAuthNToken = function (socket, respMsgType, authNDetails) {
+  class_1.prototype.sendAuthNToken = function (socket, id, respMsgType, authNDetails) {
     // TODO
-    // Temporarily just send public key JWK as string
+    // Temporarily just send id:timeestamp instead
+    // of signature
+    var timestamp = Date.now();
     var message = {
       type: respMsgType,
-      payload: JSON.stringify(authNDetails.publicKeyJWK)
+      payload: {
+        timestamp: timestamp,
+        signature: id + ':' + timestamp,
+        publicKeyJWK: JSON.parse(authNDetails.publicKeyJWK)
+      }
     };
     socket.send(message);
   };
@@ -9880,14 +9886,14 @@ function (_super) {
         // Server asking for registration creds for new client
         // Send public key and signature to server here
         // Type of message should be "Registration Response"
-        util_1.util.sendAuthNToken(this.socket, enums_1.ServerMessageType.RegnResponse, this._options.authNDetails);
+        util_1.util.sendAuthNToken(this.socket, this._id, enums_1.ServerMessageType.RegnResponse, this._options.authNDetails);
         break;
 
       case enums_1.ServerMessageType.AuthNRequest:
         // Server asking for creds for existing client
         // Send public key and signature to server here
         // Type of message should be "AuthN Response"
-        util_1.util.sendAuthNToken(this.socket, enums_1.ServerMessageType.AuthNResponse, this._options.authNDetails);
+        util_1.util.sendAuthNToken(this.socket, this._id, enums_1.ServerMessageType.AuthNResponse, this._options.authNDetails);
         break;
 
       case enums_1.ServerMessageType.Error:
