@@ -7,10 +7,6 @@ let peer = null;
 let rtcConn = null;
 let peerJSMode = 'local'; // Other value is 'remote'
 
-// Security related
-// Cache the pvt key as an optimization
-let gblPvtKey = null;
-
 // Backbone Related Code
 var app = {}; // create app namespace
 
@@ -453,46 +449,42 @@ ReactDOM.render(
 
 // PeerJS related init code
 function peerJSInitPrep() {
+  if (!app.userInfoColl) {
+    console.log('ERROR: app.userInfoColl is undefined!');
+    return;
+  }
+
   const userInfoDomContainer = document.querySelector('#userInfoPanel');
   ReactDOM.render(
     <UserInfoView userInfoColl={app.userInfoColl} />,
     userInfoDomContainer);
 
-  // let timestamp = Date.now();
- 
-  // app.userInfoColl.fetch();
   let id = app.userInfoColl.at(0).toJSON().userName;
-  
-  let pvtKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pvtKeyJWK);
-  let pvtKeyPromise = importKeyJWK(JSON.parse(pvtKeyJWK));
 
-  pvtKeyPromise.then(
-    function(pvtKey) {
-      gblPvtKey = pvtKey;
+  let pubKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pubKeyJWK);
+  let pubKeyPromise = importKeyJWK(JSON.parse(pubKeyJWK));
 
-      // const data = id + ':' + timestamp;
-      // const enc = new TextEncoder();
-      // const encoded = enc.encode(data);
+  pubKeyPromise.then(
+    function(pubKey) {
+      let pvtKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pvtKeyJWK);
+      let pvtKeyPromise = importKeyJWK(JSON.parse(pvtKeyJWK));
 
-      // const signaturePromise = sign(pvtKey, encoded);
-
-      // signaturePromise.then(
-      //   function(signature) {
-      //     let dec = new TextDecoder();
-      peerJSInit(id);
-      //   },
-      //   function(error){
-      //     console.log(`Error generating signature: ${error}`);
-      //   }
-      // );
+      pvtKeyPromise.then(
+        function(pvtKey) {
+          peerJSInit(id, pubKey, pvtKey);
+        },
+        function(error) {
+          console.log(`Error updating importing private key: ${error}`);
+        }
+      );
     },
     function(error) {
-      console.log(`Error updating importing pvt key: ${error}`);
+      console.log(`Error updating importing public key: ${error}`);
     }
   );
 }
 
-function peerJSInit(id) {
+function peerJSInit(id, pubKey, pvtKey) {
   // github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
   let peerJSHost = 'peerjs-srv-vpa-mod.herokuapp.com';
   let peerJSPort = 443;
@@ -504,27 +496,15 @@ function peerJSInit(id) {
     peerJSSecure = 'false';
   }
 
-  // Get public key in string format
-  // let peerJSPublicKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pubKeyJWK);
+  let authNDetails = new AuthNDetails(AuthNModel.Signature);
+  authNDetails.publicKey = pubKey;
+  authNDetails.privateKey = pvtKey;
 
-  if (app.userInfoColl !== undefined) {
-    if (peerJSMode === 'local') {
-      peer = new Peer(id, {
-          host: 'localhost', port: 9000, path: '/peerjs',
-          authNModel: "SIGNATURE"
-      });
-    } else {
-      peer = new Peer(id, {
-          host: peerJSHost, port: peerJSPort, path: '/peerjs',
-          secure: peerJSSecure,
-          authNModel: "SIGNATURE",
-      });
-    }
-  } else {
-    console.log('ERROR: app.userInfoColl is undefined!');
-    // peer = new Peer({host: 'localhost', port: 9000, path: '/peerjs'});
-    peer = new Peer({host: peerJSHost, port: peerJSPort, path: '/peerjs', secure: peerJSSecure});
-  }
+  peer = new Peer(id, {
+    host: peerJSHost, port: peerJSPort, path: '/peerjs',
+    secure: peerJSSecure,
+    authNDetails: authNDetails
+  });
 
   // This remote PeerJS cloud server works.
   // let peer = new Peer({key: 'lwjd5qra8257b9'});
