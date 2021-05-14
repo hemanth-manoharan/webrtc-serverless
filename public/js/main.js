@@ -354,7 +354,7 @@ async function exportKeyJWK(key) {
   return exportedJWKPromise;
 }
 
-async function importKeyJWK(jwk) {
+async function importPrivateKeyJWK(jwk) {
   const importedKeyPromise = await window.crypto.subtle.importKey(
     "jwk",
     jwk,
@@ -462,43 +462,37 @@ function peerJSInitPrep() {
   let id = app.userInfoColl.at(0).toJSON().userName;
 
   let pubKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pubKeyJWK);
-  let pubKeyPromise = importKeyJWK(JSON.parse(pubKeyJWK));
 
-  pubKeyPromise.then(
-    function(pubKey) {
-      let pvtKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pvtKeyJWK);
-      let pvtKeyPromise = importKeyJWK(JSON.parse(pvtKeyJWK));
+  let pvtKeyJWK = JSON.stringify(app.userInfoColl.at(0).toJSON().pvtKeyJWK);
+  let pvtKeyPromise = importPrivateKeyJWK(JSON.parse(pvtKeyJWK));
 
-      pvtKeyPromise.then(
-        function(pvtKey) {
-          peerJSInit(id, pubKey, pvtKey);
-        },
-        function(error) {
-          console.log(`Error updating importing private key: ${error}`);
-        }
-      );
+  pvtKeyPromise.then(
+    function(pvtKey) {
+      peerJSInit(id, pubKeyJWK, pvtKey);
     },
     function(error) {
-      console.log(`Error updating importing public key: ${error}`);
+      console.log(`Error updating importing private key: ${error}`);
     }
   );
 }
 
-function peerJSInit(id, pubKey, pvtKey) {
+function peerJSInit(id, pubKeyJWK, pvtKey) {
   // github repo for PeerJS Server - https://github.com/hemanth-manoharan/peerjs-server-express
   let peerJSHost = 'peerjs-srv-vpa-mod.herokuapp.com';
   let peerJSPort = 443;
-  let peerJSSecure = 'true';
+  let peerJSSecure = true;
 
   if (peerJSMode === 'local') {
     peerJSHost = 'localhost';
     peerJSPort = 9000;
-    peerJSSecure = 'false';
+    peerJSSecure = false;
   }
 
-  let authNDetails = new AuthNDetails(AuthNModel.Signature);
-  authNDetails.publicKey = pubKey;
-  authNDetails.privateKey = pvtKey;
+  let authNDetails = {
+    model: "SIGNATURE",
+    publicKeyJWK: JSON.stringify(pubKeyJWK),
+    privateKey: pvtKey
+  };
 
   peer = new Peer(id, {
     host: peerJSHost, port: peerJSPort, path: '/peerjs',

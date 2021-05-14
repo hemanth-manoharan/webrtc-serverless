@@ -6828,6 +6828,16 @@ function () {
     return location.protocol === "https:";
   };
 
+  class_1.prototype.sendAuthNToken = function (socket, respMsgType, authNDetails) {
+    // TODO
+    // Temporarily just send public key JWK as string
+    var message = {
+      type: respMsgType,
+      payload: JSON.stringify(authNDetails.publicKeyJWK)
+    };
+    socket.send(message);
+  };
+
   return class_1;
 }())();
 },{"peerjs-js-binarypack":"kdPp","./supports":"I31f"}],"JJlS":[function(require,module,exports) {
@@ -7393,7 +7403,9 @@ var ServerMessageType;
   ServerMessageType["Answer"] = "ANSWER";
   ServerMessageType["Open"] = "OPEN";
   ServerMessageType["RegnRequest"] = "REGN-REQ";
+  ServerMessageType["RegnResponse"] = "REGN-RESP";
   ServerMessageType["AuthNRequest"] = "AUTHN-REQ";
+  ServerMessageType["AuthNResponse"] = "AUTHN-RESP";
   ServerMessageType["Error"] = "ERROR";
   ServerMessageType["IdTaken"] = "ID-TAKEN";
   ServerMessageType["InvalidKey"] = "INVALID-KEY";
@@ -9866,14 +9878,16 @@ function (_super) {
 
       case enums_1.ServerMessageType.RegnRequest:
         // Server asking for registration creds for new client
-        // TODO Send public key and signature to server here
+        // Send public key and signature to server here
         // Type of message should be "Registration Response"
+        util_1.util.sendAuthNToken(this.socket, enums_1.ServerMessageType.RegnResponse, this._options.authNDetails);
         break;
 
       case enums_1.ServerMessageType.AuthNRequest:
         // Server asking for creds for existing client
-        // TODO Send public key and signature to server here
+        // Send public key and signature to server here
         // Type of message should be "AuthN Response"
+        util_1.util.sendAuthNToken(this.socket, enums_1.ServerMessageType.AuthNResponse, this._options.authNDetails);
         break;
 
       case enums_1.ServerMessageType.Error:
