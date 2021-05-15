@@ -471,7 +471,7 @@ function peerJSInitPrep() {
       peerJSInit(id, pubKeyJWK, pvtKey);
     },
     function(error) {
-      console.log(`Error updating importing private key: ${error}`);
+      console.log(`Error importing private key: ${error}`);
     }
   );
 }
