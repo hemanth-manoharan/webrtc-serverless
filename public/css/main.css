@@ -21,16 +21,16 @@ body {
   background: #eee;
 }
 
-#chatList {
+#chatContactList {
   list-style-type: none;
     /* Hides bullet points from todo list */
 }
 
-#chatList li {
+#chatContactList li {
   padding: 5px 10px;
 }
 
-#chatList li:nth-child(odd) {
+#chatContactList li:nth-child(odd) {
   background: #eee;
 }
 
