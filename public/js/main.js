@@ -5,7 +5,7 @@
 // peerjs related
 let peer = null;
 let rtcConn = null;
-let peerJSMode = 'local'; // Other value is 'remote'
+let peerJSMode = 'remote'; // Other value is 'remote'
 
 // Backbone Related Code
 var app = {}; // create app namespace
