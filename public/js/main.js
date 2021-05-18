@@ -5,7 +5,7 @@
 // peerjs related
 let peer = null;
 let rtcConn = null;
-let peerJSMode = 'remote'; // Other value is 'remote'
+let peerJSMode = 'remote'; // Values: 'local' or 'remote'
 
 // Backbone Related Code
 var app = {}; // create app namespace
@@ -271,6 +271,7 @@ function selectChat(peerUserName) {
   });
 
   app.messageList = new app.MessageList();
+  app.messageList.fetch();
   const domContainer = document.querySelector('#chat');
   ReactDOM.render(
     <MessageListView collection={app.messageList} />, 
