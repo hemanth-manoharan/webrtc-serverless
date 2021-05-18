@@ -93,6 +93,7 @@ class ChatListView extends React.Component {
       for (var i = 0; i < length; i++) {
         this.state.collection.at(0).destroy();
       }
+      this.state.collection.fetch();
     }
     this.setState({
       collection: this.state.collection
@@ -148,6 +149,7 @@ class MessageListView extends React.Component {
       for (var i = 0; i < length; i++) {
         this.state.collection.at(0).destroy();
       }
+      this.state.collection.fetch();
     } else {
       console.error("Message collection is undefined!")
     }
@@ -234,6 +236,7 @@ class UserInfoView extends React.Component {
       for (var i = 0; i < length; i++) {
         this.state.collection.at(0).destroy();
       }
+      this.state.collection.fetch();
       // Update local state
       this.setState({
         collection: this.state.collection
@@ -261,6 +264,7 @@ function addToChatList(peerUserName) {
   if (app.chatList.where({userId: peerUserName}).length === 0) {
     app.chatList.create({userId: peerUserName});
   }
+  app.chatList.fetch();
 }
 
 // Refresh messageList and messageListView
@@ -275,8 +279,26 @@ function selectChat(peerUserName) {
   const domContainer = document.querySelector('#chat');
   ReactDOM.render(
     <MessageListView collection={app.messageList} />, 
-    domContainer)
+    domContainer);
 }
+
+function addToMessageList(data) {
+  app.messageList.fetch();
+  app.messageList.create({
+    body: data,
+    userName: app.sessionInfoColl.at(0).toJSON().peerUserName,
+    timestamp: Date.now() // Timestamp at which message is received, not sent
+  });
+
+  // TODO - This part of re-render is not working.
+  // Backbone collection state is fine.
+
+  // const domContainer = document.querySelector('#chat');
+  // ReactDOM.render(
+  //   <MessageListView collection={app.messageList} />, 
+  //   domContainer);
+}
+
 
 function populateUserInfoCollection(userName) {
   // Generate <Public, Private> key pair here and
@@ -368,60 +390,6 @@ async function importPrivateKeyJWK(jwk) {
   );
   return importedKeyPromise;
 }
-
-// Ref: https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-// function ab2str(buf) {
-//   return String.fromCharCode.apply(null, new Uint16Array(buf));
-// }
-
-// async function checkEncryptAndDecrypt(keyPair) {
-//   let secretKey = window.crypto.subtle.deriveKey(
-//     {
-//       name: "ECDH",
-//       public: keyPair.publicKey
-//     },
-//     keyPair.privateKey,
-//     {
-//       name: "AES-GCM",
-//       length: 256
-//     },
-//     false,
-//     ["encrypt", "decrypt"]
-//   );
-
-//   // Encrypt
-//   iv = window.crypto.getRandomValues(new Uint8Array(12));
-//   let encoded = getMessageEncoding();
-
-//   ciphertext = await window.crypto.subtle.encrypt(
-//     {
-//       name: "AES-GCM",
-//       iv: iv
-//     },
-//     secretKey,
-//     encoded
-//   );
-
-//   let buffer = new Uint8Array(ciphertext, 0, 5);
-//   console.log(`${buffer}...[${ciphertext.byteLength} bytes total]`);
-
-//   // Decrypt
-//   try {
-//     let decrypted = await window.crypto.subtle.decrypt(
-//       {
-//         name: "AES-GCM",
-//         iv: iv
-//       },
-//       secretKey,
-//       ciphertext
-//     );
-
-//     let dec = new TextDecoder();
-//     console.log(dec.decode(decrypted));
-//   } catch (e) {
-//     console.log("*** Decryption error ***");
-//   }
-// }
 
 /// End - Web Crypto Utility 
 
@@ -576,11 +544,7 @@ function setupConnection(conn) {
         // Add it to the currently live messageList
         // Assumes that the current WebRTC connection
         // is for the current remote peer.
-        app.messageList.create({
-          body: data,
-          userName: app.sessionInfoColl.at(0).toJSON().peerUserName,
-          timestamp: Date.now() // Timestamp at which message is received, not sent
-        });
+        addToMessageList(data);
       }
     });
 
@@ -615,9 +579,11 @@ function processCommand(data) {
     case 'userId':
       let peerUserName = data.split(':')[1];
 
-      if (app.sessionInfoColl.length == 1) {
+      var length = app.sessionInfoColl.length;
+      for (var i = 0; i < length; i++) {
         app.sessionInfoColl.at(0).destroy();
       }
+      app.sessionInfoColl.fetch();
       app.sessionInfoColl.create({peerUserName: peerUserName});
 
       $('#status').html('Connected to ' + peerUserName);
