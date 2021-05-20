@@ -82,6 +82,7 @@ class ChatListView extends React.Component {
   }
 
   refresh() {
+    this.state.collection.fetch();
     this.setState({
       collection: this.state.collection
     });
@@ -137,6 +138,7 @@ class MessageListView extends React.Component {
   }
 
   refresh() {
+    this.state.collection.fetch();
     this.setState({
       currMessage: this.state.currMessage,
       collection: this.state.collection
@@ -175,6 +177,7 @@ class MessageListView extends React.Component {
     // Send message via WebRTC here
     rtcConn.send(msg);
 
+    this.state.collection.fetch();
     this.state.collection.create({
       body: msg,
       userName: app.userInfoColl.at(0).toJSON().userName,
@@ -225,6 +228,7 @@ class UserInfoView extends React.Component {
   }
 
   refresh() {
+    this.state.collection.fetch();
     this.setState({
       collection: this.state.collection
     });
@@ -289,14 +293,8 @@ function addToMessageList(data) {
     userName: app.sessionInfoColl.at(0).toJSON().peerUserName,
     timestamp: Date.now() // Timestamp at which message is received, not sent
   });
-
-  // TODO - This part of re-render is not working.
+  // TODO - Here react render/refresh is not working.
   // Backbone collection state is fine.
-
-  // const domContainer = document.querySelector('#chat');
-  // ReactDOM.render(
-  //   <MessageListView collection={app.messageList} />, 
-  //   domContainer);
 }
 
 
