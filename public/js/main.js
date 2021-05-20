@@ -82,7 +82,6 @@ class ChatListView extends React.Component {
   }
 
   refresh() {
-    this.state.collection.fetch();
     this.setState({
       collection: this.state.collection
     });
@@ -94,7 +93,6 @@ class ChatListView extends React.Component {
       for (var i = 0; i < length; i++) {
         this.state.collection.at(0).destroy();
       }
-      this.state.collection.fetch();
     }
     this.setState({
       collection: this.state.collection
@@ -138,7 +136,6 @@ class MessageListView extends React.Component {
   }
 
   refresh() {
-    this.state.collection.fetch();
     this.setState({
       currMessage: this.state.currMessage,
       collection: this.state.collection
@@ -151,7 +148,6 @@ class MessageListView extends React.Component {
       for (var i = 0; i < length; i++) {
         this.state.collection.at(0).destroy();
       }
-      this.state.collection.fetch();
     } else {
       console.error("Message collection is undefined!")
     }
@@ -177,7 +173,6 @@ class MessageListView extends React.Component {
     // Send message via WebRTC here
     rtcConn.send(msg);
 
-    this.state.collection.fetch();
     this.state.collection.create({
       body: msg,
       userName: app.userInfoColl.at(0).toJSON().userName,
@@ -228,7 +223,6 @@ class UserInfoView extends React.Component {
   }
 
   refresh() {
-    this.state.collection.fetch();
     this.setState({
       collection: this.state.collection
     });
@@ -240,7 +234,6 @@ class UserInfoView extends React.Component {
       for (var i = 0; i < length; i++) {
         this.state.collection.at(0).destroy();
       }
-      this.state.collection.fetch();
       // Update local state
       this.setState({
         collection: this.state.collection
@@ -268,7 +261,6 @@ function addToChatList(peerUserName) {
   if (app.chatList.where({userId: peerUserName}).length === 0) {
     app.chatList.create({userId: peerUserName});
   }
-  app.chatList.fetch();
 }
 
 // Refresh messageList and messageListView
@@ -287,14 +279,14 @@ function selectChat(peerUserName) {
 }
 
 function addToMessageList(data) {
-  app.messageList.fetch();
   app.messageList.create({
     body: data,
     userName: app.sessionInfoColl.at(0).toJSON().peerUserName,
     timestamp: Date.now() // Timestamp at which message is received, not sent
   });
-  // TODO - Here react render/refresh is not working.
-  // Backbone collection state is fine.
+  // TODO
+  // Here, both backbone state and react component state
+  // are getting corrupted!!
 }
 
 
@@ -577,11 +569,12 @@ function processCommand(data) {
     case 'userId':
       let peerUserName = data.split(':')[1];
 
+      // TODO Multiple session objects are still
+      // getting created!!
       var length = app.sessionInfoColl.length;
       for (var i = 0; i < length; i++) {
         app.sessionInfoColl.at(0).destroy();
       }
-      app.sessionInfoColl.fetch();
       app.sessionInfoColl.create({peerUserName: peerUserName});
 
       $('#status').html('Connected to ' + peerUserName);
