@@ -173,6 +173,8 @@ class MessageListView extends React.Component {
     // Send message via WebRTC here
     rtcConn.send(msg);
 
+    // TODO This is messing up the collection state 
+    // as well in multiple authn scenario
     this.state.collection.create({
       body: msg,
       userName: app.userInfoColl.at(0).toJSON().userName,
