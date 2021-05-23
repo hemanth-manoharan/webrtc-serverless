@@ -7,6 +7,13 @@
     "node-static": "^0.7.10"
   },
   "scripts": {
+    "build": "./node_modules/.bin/babel src --out-dir public/js --presets @babel/preset-react",
     "start": "node index.js"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.14.3",
+    "@babel/core": "^7.14.3",
+    "@babel/preset-env": "^7.14.2",
+    "@babel/preset-react": "^7.13.13"
   }
 }
