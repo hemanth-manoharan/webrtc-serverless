@@ -162,7 +162,8 @@ function UserInfoView(props) {
   return (
     <div>
       <label>UserName: {(props.collection && props.collection.at(0)) 
-        ? props.collection.at(0).userName : "NOT SET"}</label>
+        ? props.collection.at(0).toJSON().userName : "NOT SET"}</label>
+      <br/>
       <button onClick={props.onClear}>Clear User Info</button>
     </div>
   );
