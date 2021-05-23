@@ -1,5 +1,7 @@
 'use strict';
 
+const appVersion = 'v0.2.0';
+
 /// Start - Web Crypto Utility
 
 async function generateKeyPair() {
@@ -257,7 +259,7 @@ class ChatApp extends React.Component {
       <div className="chat-app">
         <h2>Real-time chat with PeerJS</h2>
         <br/>
-        <h3>v0.1.2</h3>
+        <h3>{appVersion}</h3>
         <br/>
 
         <UserInfoView collection={this.state.userInfoColl} 
