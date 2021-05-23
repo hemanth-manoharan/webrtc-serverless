@@ -1,5 +1,7 @@
 'use strict';
 
+const appVersion = 'v0.2.0';
+
 /// Start - Web Crypto Utility
 
 async function generateKeyPair() {
@@ -118,9 +120,15 @@ function ChatListView(props) {
     <ChatView key={elem.get('userId')} chat={elem}/>) : null;
   return (
     <div>
-      <h1>Contacts</h1>
-      <button onClick={props.onClear}>Clear All</button>
-      <ul id="chatContactList">{chatContacts}</ul>
+      <div>
+        <h2>Contacts</h2>
+        <br/>
+        <button onClick={props.onClear}>Clear All</button>
+      </div>
+      <div>
+        <br/>
+        <ul id="chatContactList">{chatContacts}</ul>
+      </div>
     </div>
   );
 }
@@ -140,11 +148,13 @@ function MessageListView(props) {
     <MessageView key={elem.get('timestamp')} message={elem}/>) : null;
   return (
     <div>
-      <div id="header">
-        <h1>Messages</h1>
+      <div>
+        <h2>Messages</h2>
+        <br/>
         <button onClick={props.onClear}>Clear All</button>
       </div>
       <div id="messages">
+        <br/>
         <ul id="messageList">{messages}</ul>
       </div>
       <div id="footer">
@@ -161,8 +171,9 @@ function MessageListView(props) {
 function UserInfoView(props) {
   return (
     <div>
-      <label>UserName: {(props.collection && props.collection.at(0)) 
-        ? props.collection.at(0).userName : "NOT SET"}</label>
+      <div><b>UserName:</b> {(props.collection && props.collection.at(0)) 
+        ? props.collection.at(0).toJSON().userName : "NOT SET"}</div>
+      <br/>
       <button onClick={props.onClear}>Clear User Info</button>
     </div>
   );
@@ -174,10 +185,10 @@ function PeerJSInfoView(props) {
       <h3>PeerJS Info:</h3>
       <br/>
 
-      Peer Id: { props.info.selfPeerId }
+      <b>Peer Id:</b> { props.info.selfPeerId }
       <br/>
       
-      Status: { props.info.status }
+      <b>Status:</b> { props.info.status }
     </div>
   );
 }
@@ -254,9 +265,9 @@ class ChatApp extends React.Component {
   render() {
     return (
       <div className="chat-app">
-        <h2>Real-time chat with PeerJS</h2>
+        <h1>WebRTC chat</h1>
         <br/>
-        <h3>v0.1.2</h3>
+        <h3>{appVersion}</h3>
         <br/>
 
         <UserInfoView collection={this.state.userInfoColl} 
@@ -264,7 +275,7 @@ class ChatApp extends React.Component {
         <br/>
 
         <div>
-          <div className="textLabel">Enter peer id to connect to:</div>
+          <div><b>Peer id to connect to:</b></div>
           <form onSubmit={this.handleConnect}>
               <input type="text" value={this.state.peerJSInfo.peerId} onChange={this.handlePeerIdChange} />
               <input type="submit" value="Connect" />
